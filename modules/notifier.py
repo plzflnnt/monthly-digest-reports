@@ -1,56 +1,78 @@
 import os
 import base64
 import logging
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
-from googleapiclient.discovery import build
+from mailjet_rest import Client
 import json
-from utils.secrets_utils import get_service_account_credentials
+from utils.secrets_utils import get_mailjet_credentials
 
-def send_email(to, subject, message_html, pdf_buffer, sender="monthly-digest@seu-dominio.com"):
+def send_email(to, subject, message_html, pdf_buffer, sender=None):
     """
-    Envia um e-mail com o relatório em anexo.
+    Envia um e-mail com o relatório em anexo usando o Mailjet.
     
     Args:
         to: Endereço de e-mail do destinatário
         subject: Assunto do e-mail
         message_html: Corpo do e-mail em HTML
         pdf_buffer: Buffer com o conteúdo do PDF
-        sender: Endereço de e-mail do remetente
+        sender: Configuração do remetente (opcional, usa o padrão do secret se não fornecido)
     """
     try:
-        # Obter credenciais para o Gmail
-        credentials = get_service_account_credentials(
-            ['https://www.googleapis.com/auth/gmail.send']
-        )
+        # Obter credenciais do Mailjet
+        credentials = get_mailjet_credentials()
         
-        # Construir serviço do Gmail
-        service = build('gmail', 'v1', credentials=credentials)
+        # Configurar cliente do Mailjet
+        mailjet = Client(auth=(credentials['api_key'], credentials['secret_key']), version='v3.1')
         
-        # Criar mensagem
-        message = MIMEMultipart()
-        message['to'] = to
-        message['from'] = sender
-        message['subject'] = subject
+        # Definir remetente
+        if not sender:
+            sender_email = credentials['sender_email']
+            sender_name = credentials['sender_name']
+        else:
+            sender_email = sender
+            sender_name = "Relatórios Mensais"
         
-        # Adicionar corpo do e-mail
-        message.attach(MIMEText(message_html, 'html'))
+        # Preparar anexo (codificar PDF em base64)
+        pdf_buffer.seek(0)  # Garantir que o cursor está no início do buffer
+        pdf_content = pdf_buffer.read()
+        pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
         
-        # Adicionar anexo
-        pdf_attachment = MIMEApplication(pdf_buffer.read(), _subtype='pdf')
-        pdf_buffer.seek(0)  # Resetar ponteiro do buffer para o início
+        # Construir payload da mensagem
+        data = {
+            'Messages': [
+                {
+                    'From': {
+                        'Email': sender_email,
+                        'Name': sender_name
+                    },
+                    'To': [
+                        {
+                            'Email': to,
+                            'Name': ''
+                        }
+                    ],
+                    'Subject': subject,
+                    'HTMLPart': message_html,
+                    'Attachments': [
+                        {
+                            'ContentType': 'application/pdf',
+                            'Filename': 'relatorio_mensal.pdf',
+                            'Base64Content': pdf_base64
+                        }
+                    ]
+                }
+            ]
+        }
         
-        pdf_attachment.add_header('Content-Disposition', 'attachment', 
-                                 filename='relatorio_mensal.pdf')
-        message.attach(pdf_attachment)
+        # Enviar e-mail
+        result = mailjet.send.create(data=data)
         
-        # Codificar mensagem
-        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-        
-        # Enviar mensagem
-        message = service.users().messages().send(userId='me', body={'raw': raw_message}).execute()
-        return True, f"E-mail enviado com ID: {message['id']}"
+        # Verificar resposta
+        if result.status_code == 200:
+            response_data = result.json()
+            message_id = response_data['Messages'][0]['To'][0]['MessageID']
+            return True, f"E-mail enviado com sucesso. ID da mensagem: {message_id}"
+        else:
+            return False, f"Erro ao enviar e-mail: {result.status_code} - {result.reason}"
     
     except Exception as e:
         logging.error(f"Erro ao enviar e-mail: {str(e)}")
@@ -74,24 +96,48 @@ def notify_client(client, report_url, month, year, pdf_buffer):
     month_name = month_names[month - 1]
     
     # Criar assunto do e-mail
-    subject = f"Relatório Mensal de Marketing Digital - {month_name} {year}"
+    subject = f"Relatório Mensal de Marketing Digital - {client['name']} - {month_name} {year}"
     
     # Criar corpo do e-mail
     html_content = f"""
     <html>
-    <body>
-        <h2>Relatório Mensal de Marketing Digital</h2>
-        <p>Olá equipe da {client['name']},</p>
-        <p>Segue em anexo o relatório mensal de Marketing Digital referente ao mês de {month_name} de {year}.</p>
-        <p>O relatório inclui dados de desempenho do seu site, incluindo análise de:</p>
-        <ul>
-            <li>Tráfego e comportamento dos usuários</li>
-            <li>Desempenho nas buscas orgânicas</li>
-            <li>Palavras-chave e consultas principais</li>
-        </ul>
-        <p>Para acessar todos os seus relatórios anteriores, acesse: <a href="https://console.cloud.google.com/storage/browser/{report_url.split('/')[2]}/{client['id']}">Repositório de Relatórios</a></p>
-        <p>Em caso de dúvidas, estamos à disposição.</p>
-        <p>Atenciosamente,<br>Equipe de Marketing Digital</p>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #dddddd; border-radius: 5px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #2C3E50;">Relatório Mensal de Marketing Digital</h2>
+                <p style="font-size: 18px;">{month_name} {year}</p>
+            </div>
+            
+            <p>Olá equipe da <strong>{client['name']}</strong>,</p>
+            
+            <p>Esperamos que este e-mail encontre você bem! Anexamos o relatório mensal de Marketing Digital referente ao mês de {month_name} de {year}.</p>
+            
+            <p>O relatório inclui dados detalhados de desempenho do seu site, incluindo:</p>
+            
+            <ul style="background-color: #f9f9f9; padding: 15px; border-radius: 5px;">
+                <li>Análise de tráfego e comportamento dos usuários</li>
+                <li>Desempenho nas buscas orgânicas</li>
+                <li>Palavras-chave e consultas principais</li>
+                <li>Páginas com melhor desempenho</li>
+            </ul>
+            
+            <p>Para acessar todos os seus relatórios anteriores, utilize o link abaixo:</p>
+            
+            <div style="text-align: center; margin: 25px 0;">
+                <a href="https://console.cloud.google.com/storage/browser/{report_url.split('/')[2]}/{client['id']}" 
+                   style="background-color: #3498DB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Acessar Repositório de Relatórios
+                </a>
+            </div>
+            
+            <p>Caso tenha alguma dúvida sobre o relatório ou queira discutir estratégias baseadas nestes dados, não hesite em entrar em contato.</p>
+            
+            <p>Atenciosamente,<br>Equipe de Marketing Digital</p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dddddd; font-size: 12px; color: #777777; text-align: center;">
+                <p>Este é um e-mail automático. Por favor, não responda diretamente a este e-mail.</p>
+            </div>
+        </div>
     </body>
     </html>
     """

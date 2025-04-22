@@ -39,3 +39,32 @@ def get_service_account_credentials(scopes):
     except Exception as e:
         logging.error(f"Erro ao obter credenciais: {str(e)}")
         raise
+
+def get_mailjet_credentials():
+    """
+    Obtém as credenciais do Mailjet do Secret Manager.
+    
+    Returns:
+        dict: Dicionário com credenciais do Mailjet (api_key, secret_key, sender_email, sender_name)
+    """
+    try:
+        # Inicializar cliente do Secret Manager
+        client = secretmanager.SecretManagerServiceClient()
+        
+        # Nome do secret (caminho completo)
+        secret_name = "projects/295924338757/secrets/mailjet-credentials/versions/latest"
+        
+        # Acessar o secret
+        response = client.access_secret_version(request={"name": secret_name})
+        
+        # Decodificar o payload
+        secret_content = response.payload.data.decode("UTF-8")
+        
+        # Converter em JSON
+        mailjet_credentials = json.loads(secret_content)
+        
+        return mailjet_credentials
+    
+    except Exception as e:
+        logging.error(f"Erro ao obter credenciais do Mailjet: {str(e)}")
+        raise

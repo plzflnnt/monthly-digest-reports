@@ -5,7 +5,7 @@ import os
 from modules import analytics, search_console, report_generator, notifier
 from utils import date_utils
 
-def test_integration():
+def test_integration(test_email=False):
     """Testa a integração dos módulos."""
     print("Iniciando teste de integração...")
     
@@ -98,28 +98,28 @@ def test_integration():
     except Exception as e:
         print(f"❌ Erro ao fazer upload do relatório: {str(e)}")
     
-    # 5. Testar notificação (opcional - remova comentário para testar)
-    
-    print("\nTestando notificação por e-mail...")
-    try:
-        pdf_buffer.seek(0)
-        success, message = notifier.notify_client(
-            client, 
-            report_url, 
-            month, 
-            year, 
-            pdf_buffer
-        )
-        
-        if success:
-            print(f"✅ Cliente notificado com sucesso: {message}")
-        else:
-            print(f"❌ Erro ao notificar cliente: {message}")
-    except Exception as e:
-        print(f"❌ Erro ao notificar cliente: {str(e)}")
-    
+    # 5. Testar notificação (opcional - agora controlado por parâmetro)
+    if test_email:
+        print("\nTestando notificação por e-mail com Mailjet...")
+        try:
+            pdf_buffer.seek(0)
+            success, message = notifier.notify_client(
+                client, 
+                report_url, 
+                month, 
+                year, 
+                pdf_buffer
+            )
+            
+            if success:
+                print(f"✅ Cliente notificado com sucesso: {message}")
+            else:
+                print(f"❌ Erro ao notificar cliente: {message}")
+        except Exception as e:
+            print(f"❌ Erro ao notificar cliente: {str(e)}")
     
     print("\nTeste de integração concluído!")
 
 if __name__ == "__main__":
-    test_integration()
+    # Para testar com envio de e-mail, mude para True
+    test_integration(test_email=True)

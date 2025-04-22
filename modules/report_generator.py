@@ -6,6 +6,7 @@ import pandas as pd
 from fpdf import FPDF
 import io
 from google.cloud import storage
+import tempfile
 
 class ReportGenerator:
     def __init__(self, client_config, template_path, month, year, language='pt-BR'):
@@ -39,6 +40,8 @@ class ReportGenerator:
     
     def generate_pdf(self):
         """Gera o relatório em PDF."""
+        temp_files = []  # Lista para armazenar caminhos de arquivos temporários
+        
         pdf = FPDF()
         pdf.add_page()
         
@@ -52,17 +55,38 @@ class ReportGenerator:
         
         # Adicionar cada seção conforme o template
         for section in self.template['sections']:
-            self._add_section(pdf, section)
+            result = self._add_section(pdf, section)
+            if result and isinstance(result, list):
+                temp_files.extend(result)
         
-        # Salvar o PDF em memória
-        pdf_buffer = io.BytesIO()
-        pdf.output(pdf_buffer)
-        pdf_buffer.seek(0)
+        # Salvar o PDF em memória usando um arquivo temporário
+        temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        temp_pdf.close()
         
+        pdf.output(temp_pdf.name)
+        
+        # Ler o arquivo PDF para um buffer
+        with open(temp_pdf.name, 'rb') as f:
+            pdf_buffer = io.BytesIO(f.read())
+        
+        # Limpar arquivos temporários
+        try:
+            os.unlink(temp_pdf.name)
+        except:
+            pass
+            
+        for temp_file in temp_files:
+            try:
+                os.unlink(temp_file)
+            except:
+                pass
+            
         return pdf_buffer
     
     def _add_section(self, pdf, section):
         """Adiciona uma seção ao relatório."""
+        temp_files = []  # Lista para armazenar caminhos de arquivos temporários
+        
         pdf.set_font('Arial', 'B', 14)
         pdf.ln(10)
         pdf.cell(0, 10, section['title'], 0, 1, 'L')
@@ -72,9 +96,15 @@ class ReportGenerator:
         if section['name'] == 'resumo':
             self._add_summary_section(pdf)
         elif section['name'] == 'analytics':
-            self._add_analytics_section(pdf)
+            files = self._add_analytics_section(pdf)
+            if files:
+                temp_files.extend(files)
         elif section['name'] == 'search_console':
-            self._add_search_console_section(pdf)
+            files = self._add_search_console_section(pdf)
+            if files:
+                temp_files.extend(files)
+        
+        return temp_files
     
     def _add_summary_section(self, pdf):
         """Adiciona a seção de resumo."""
@@ -94,13 +124,17 @@ class ReportGenerator:
             pdf.cell(0, 8, f"Cliques em buscas: {int(search_console_data['total_clicks'])}", 0, 1)
             pdf.cell(0, 8, f"CTR médio: {float(search_console_data['avg_ctr'])*100:.2f}%", 0, 1)
             pdf.cell(0, 8, f"Posição média: {float(search_console_data['avg_position']):.1f}", 0, 1)
+        
+        return []
     
     def _add_analytics_section(self, pdf):
         """Adiciona a seção de Analytics."""
+        temp_files = []
+        
         analytics_data = self.report_data.get('analytics', {})
         if not analytics_data:
             pdf.cell(0, 8, "Dados do Google Analytics não disponíveis.", 0, 1)
-            return
+            return temp_files
         
         # Principais páginas
         pdf.ln(5)
@@ -125,6 +159,7 @@ class ReportGenerator:
             
             # Gráfico de dispositivos
             pie_chart = self._create_device_chart(devices)
+            temp_files.append(pie_chart)
             pdf.image(pie_chart, x=10, y=None, w=80)
         
         # Fontes de tráfego
@@ -136,13 +171,17 @@ class ReportGenerator:
         if 'traffic_sources' in analytics_data:
             for i, source in enumerate(analytics_data['traffic_sources'][:5], 1):
                 pdf.cell(0, 6, f"{i}. {source['source']} / {source['medium']} - {source['sessions']} sessões", 0, 1)
+        
+        return temp_files
     
     def _add_search_console_section(self, pdf):
         """Adiciona a seção de Search Console."""
+        temp_files = []
+        
         search_console_data = self.report_data.get('search_console', {})
         if not search_console_data:
             pdf.cell(0, 8, "Dados do Search Console não disponíveis.", 0, 1)
-            return
+            return temp_files
         
         # Consultas principais
         pdf.ln(5)
@@ -168,7 +207,10 @@ class ReportGenerator:
         # Gráfico de desempenho diário
         if 'performance_by_date' in search_console_data:
             performance_chart = self._create_performance_chart(search_console_data['performance_by_date'])
+            temp_files.append(performance_chart)
             pdf.image(performance_chart, x=10, y=None, w=180)
+        
+        return temp_files
     
     def _create_device_chart(self, devices):
         """Cria um gráfico de pizza de dispositivos."""
@@ -180,12 +222,16 @@ class ReportGenerator:
         plt.axis('equal')
         plt.title('Distribuição de Sessões por Dispositivo')
         
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
+        # Criar arquivo temporário
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+        temp_filename = temp.name
+        temp.close()
+        
+        # Salvar para arquivo temporário
+        plt.savefig(temp_filename, format='png')
         plt.close()
         
-        return buf
+        return temp_filename
     
     def _create_performance_chart(self, performance_data):
         """Cria um gráfico de desempenho diário."""
@@ -216,12 +262,16 @@ class ReportGenerator:
         
         plt.tight_layout()
         
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
+        # Criar arquivo temporário
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+        temp_filename = temp.name
+        temp.close()
+        
+        # Salvar para arquivo temporário
+        plt.savefig(temp_filename, format='png')
         plt.close()
         
-        return buf
+        return temp_filename
 
 def upload_report(pdf_buffer, client_id, year, month, bucket_name='monthly-digest-reports'):
     """Faz upload do relatório para o Cloud Storage."""
