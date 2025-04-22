@@ -8,7 +8,7 @@ from google.cloud import secretmanager
 def get_search_console_credentials():
     """Recupera as credenciais do Secret Manager."""
     client = secretmanager.SecretManagerServiceClient()
-    name = f"projects/YOUR_PROJECT_ID/secrets/search-console-credentials/versions/latest"
+    name = f"projects/monthly-digest-automation/secrets/search-console-credentials/versions/latest"
     response = client.access_secret_version(request={"name": name})
     return service_account.Credentials.from_service_account_info(
         json.loads(response.payload.data.decode("UTF-8")),
