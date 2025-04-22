@@ -1,83 +1,84 @@
-from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import pandas as pd
 from datetime import datetime, timedelta
+import json
 import os
-from google.cloud import secretmanager
-
-def get_analytics_credentials():
-    """Recupera as credenciais do Secret Manager."""
-    client = secretmanager.SecretManagerServiceClient()
-    name = f"projects/monthly-digest-automation/secrets/analytics-credentials/versions/latest"
-    response = client.access_secret_version(request={"name": name})
-    return service_account.Credentials.from_service_account_info(
-        json.loads(response.payload.data.decode("UTF-8")),
-        scopes=['https://www.googleapis.com/auth/analytics.readonly']
-    )
+import logging
+from utils.secrets_utils import get_service_account_credentials
 
 def get_analytics_data(property_id, start_date, end_date):
     """Extrai dados do Google Analytics 4 para o período especificado."""
-    credentials = get_analytics_credentials()
-    analytics = build('analyticsdata', 'v1beta', credentials=credentials)
-    
-    # Métricas básicas
-    basic_report = analytics.properties().runReport(
-        property=f'properties/{property_id}',
-        body={
-            'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
-            'metrics': [
-                {'name': 'totalUsers'},
-                {'name': 'sessions'},
-                {'name': 'engagedSessions'},
-                {'name': 'engagementRate'},
-                {'name': 'averageSessionDuration'}
-            ]
+    try:
+        # Obter credenciais com escopo para Analytics
+        credentials = get_service_account_credentials(
+            ['https://www.googleapis.com/auth/analytics.readonly']
+        )
+        
+        # Construir serviço do Analytics
+        analytics = build('analyticsdata', 'v1beta', credentials=credentials)
+        
+        # Métricas básicas
+        basic_report = analytics.properties().runReport(
+            property=f'properties/{property_id}',
+            body={
+                'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
+                'metrics': [
+                    {'name': 'totalUsers'},
+                    {'name': 'sessions'},
+                    {'name': 'engagedSessions'},
+                    {'name': 'engagementRate'},
+                    {'name': 'averageSessionDuration'}
+                ]
+            }
+        ).execute()
+        
+        # Páginas mais visitadas
+        pages_report = analytics.properties().runReport(
+            property=f'properties/{property_id}',
+            body={
+                'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
+                'dimensions': [{'name': 'pagePath'}, {'name': 'pageTitle'}],
+                'metrics': [{'name': 'screenPageViews'}],
+                'limit': 10,
+                'orderBys': [{'metric': {'metricName': 'screenPageViews'}, 'desc': True}]
+            }
+        ).execute()
+        
+        # Fontes de tráfego
+        sources_report = analytics.properties().runReport(
+            property=f'properties/{property_id}',
+            body={
+                'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
+                'dimensions': [{'name': 'sessionSource'}, {'name': 'sessionMedium'}],
+                'metrics': [{'name': 'sessions'}],
+                'limit': 10,
+                'orderBys': [{'metric': {'metricName': 'sessions'}, 'desc': True}]
+            }
+        ).execute()
+        
+        # Dispositivos
+        devices_report = analytics.properties().runReport(
+            property=f'properties/{property_id}',
+            body={
+                'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
+                'dimensions': [{'name': 'deviceCategory'}],
+                'metrics': [{'name': 'sessions'}]
+            }
+        ).execute()
+        
+        # Processar os resultados
+        results = {
+            'basic_metrics': _process_basic_metrics(basic_report),
+            'top_pages': _process_pages(pages_report),
+            'traffic_sources': _process_sources(sources_report),
+            'devices': _process_devices(devices_report)
         }
-    ).execute()
+        
+        return results
     
-    # Páginas mais visitadas
-    pages_report = analytics.properties().runReport(
-        property=f'properties/{property_id}',
-        body={
-            'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
-            'dimensions': [{'name': 'pagePath'}, {'name': 'pageTitle'}],
-            'metrics': [{'name': 'screenPageViews'}],
-            'limit': 10,
-            'orderBys': [{'metric': {'metricName': 'screenPageViews'}, 'desc': True}]
-        }
-    ).execute()
-    
-    # Fontes de tráfego
-    sources_report = analytics.properties().runReport(
-        property=f'properties/{property_id}',
-        body={
-            'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
-            'dimensions': [{'name': 'sessionSource'}, {'name': 'sessionMedium'}],
-            'metrics': [{'name': 'sessions'}],
-            'limit': 10,
-            'orderBys': [{'metric': {'metricName': 'sessions'}, 'desc': True}]
-        }
-    ).execute()
-    
-    # Dispositivos
-    devices_report = analytics.properties().runReport(
-        property=f'properties/{property_id}',
-        body={
-            'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
-            'dimensions': [{'name': 'deviceCategory'}],
-            'metrics': [{'name': 'sessions'}]
-        }
-    ).execute()
-    
-    # Processar os resultados
-    results = {
-        'basic_metrics': _process_basic_metrics(basic_report),
-        'top_pages': _process_pages(pages_report),
-        'traffic_sources': _process_sources(sources_report),
-        'devices': _process_devices(devices_report)
-    }
-    
-    return results
+    except Exception as e:
+        logging.error(f"Erro ao obter dados do Analytics: {str(e)}")
+        raise
 
 def _process_basic_metrics(report):
     """Processa métricas básicas do relatório."""

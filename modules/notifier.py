@@ -1,22 +1,12 @@
 import os
 import base64
+import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-from google.cloud import secretmanager
 from googleapiclient.discovery import build
-from google.oauth2 import service_account
 import json
-
-def get_gmail_credentials():
-    """Recupera as credenciais do Gmail do Secret Manager."""
-    client = secretmanager.SecretManagerServiceClient()
-    name = f"projects/YOUR_PROJECT_ID/secrets/gmail-credentials/versions/latest"
-    response = client.access_secret_version(request={"name": name})
-    return service_account.Credentials.from_service_account_info(
-        json.loads(response.payload.data.decode("UTF-8")),
-        scopes=['https://www.googleapis.com/auth/gmail.send']
-    )
+from utils.secrets_utils import get_service_account_credentials
 
 def send_email(to, subject, message_html, pdf_buffer, sender="monthly-digest@seu-dominio.com"):
     """
@@ -29,34 +19,41 @@ def send_email(to, subject, message_html, pdf_buffer, sender="monthly-digest@seu
         pdf_buffer: Buffer com o conteúdo do PDF
         sender: Endereço de e-mail do remetente
     """
-    credentials = get_gmail_credentials()
-    service = build('gmail', 'v1', credentials=credentials)
-    
-    # Criar mensagem
-    message = MIMEMultipart()
-    message['to'] = to
-    message['from'] = sender
-    message['subject'] = subject
-    
-    # Adicionar corpo do e-mail
-    message.attach(MIMEText(message_html, 'html'))
-    
-    # Adicionar anexo
-    pdf_attachment = MIMEApplication(pdf_buffer.read(), _subtype='pdf')
-    pdf_buffer.seek(0)  # Resetar ponteiro do buffer para o início
-    
-    pdf_attachment.add_header('Content-Disposition', 'attachment', 
-                             filename='relatorio_mensal.pdf')
-    message.attach(pdf_attachment)
-    
-    # Codificar mensagem
-    raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-    
-    # Enviar mensagem
     try:
+        # Obter credenciais para o Gmail
+        credentials = get_service_account_credentials(
+            ['https://www.googleapis.com/auth/gmail.send']
+        )
+        
+        # Construir serviço do Gmail
+        service = build('gmail', 'v1', credentials=credentials)
+        
+        # Criar mensagem
+        message = MIMEMultipart()
+        message['to'] = to
+        message['from'] = sender
+        message['subject'] = subject
+        
+        # Adicionar corpo do e-mail
+        message.attach(MIMEText(message_html, 'html'))
+        
+        # Adicionar anexo
+        pdf_attachment = MIMEApplication(pdf_buffer.read(), _subtype='pdf')
+        pdf_buffer.seek(0)  # Resetar ponteiro do buffer para o início
+        
+        pdf_attachment.add_header('Content-Disposition', 'attachment', 
+                                 filename='relatorio_mensal.pdf')
+        message.attach(pdf_attachment)
+        
+        # Codificar mensagem
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        
+        # Enviar mensagem
         message = service.users().messages().send(userId='me', body={'raw': raw_message}).execute()
         return True, f"E-mail enviado com ID: {message['id']}"
+    
     except Exception as e:
+        logging.error(f"Erro ao enviar e-mail: {str(e)}")
         return False, f"Erro ao enviar e-mail: {str(e)}"
 
 def notify_client(client, report_url, month, year, pdf_buffer):

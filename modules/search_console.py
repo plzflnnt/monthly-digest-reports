@@ -1,67 +1,67 @@
-from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import pandas as pd
 from datetime import datetime, timedelta
 import json
-from google.cloud import secretmanager
-
-def get_search_console_credentials():
-    """Recupera as credenciais do Secret Manager."""
-    client = secretmanager.SecretManagerServiceClient()
-    name = f"projects/monthly-digest-automation/secrets/search-console-credentials/versions/latest"
-    response = client.access_secret_version(request={"name": name})
-    return service_account.Credentials.from_service_account_info(
-        json.loads(response.payload.data.decode("UTF-8")),
-        scopes=['https://www.googleapis.com/auth/webmasters.readonly']
-    )
+import logging
+from utils.secrets_utils import get_service_account_credentials
 
 def get_search_console_data(site_url, start_date, end_date):
     """Extrai dados do Search Console para o período especificado."""
-    credentials = get_search_console_credentials()
-    search_console = build('searchconsole', 'v1', credentials=credentials)
-    
-    # Métricas gerais
-    query = {
-        'startDate': start_date,
-        'endDate': end_date,
-        'dimensions': ['date'],
-        'rowLimit': 31  # Para cobrir um mês inteiro
-    }
-    
-    response = search_console.searchanalytics().query(siteUrl=site_url, body=query).execute()
-    
-    # Consultas principais
-    query_terms = {
-        'startDate': start_date,
-        'endDate': end_date,
-        'dimensions': ['query'],
-        'rowLimit': 10
-    }
-    
-    top_queries = search_console.searchanalytics().query(siteUrl=site_url, body=query_terms).execute()
-    
-    # Páginas com melhor desempenho
-    top_pages_query = {
-        'startDate': start_date,
-        'endDate': end_date,
-        'dimensions': ['page'],
-        'rowLimit': 10
-    }
-    
-    top_pages = search_console.searchanalytics().query(siteUrl=site_url, body=top_pages_query).execute()
-    
-    # Processar resultados
-    results = {
-        'performance_by_date': _process_performance_by_date(response),
-        'top_queries': _process_top_queries(top_queries),
-        'top_pages': _process_top_pages(top_pages)
-    }
-    
-    # Calcular métricas agregadas
-    agg_metrics = _calculate_aggregate_metrics(response)
-    results.update(agg_metrics)
-    
-    return results
+    try:
+        # Obter credenciais com escopo para Search Console
+        credentials = get_service_account_credentials(
+            ['https://www.googleapis.com/auth/webmasters.readonly']
+        )
+        
+        # Construir serviço do Search Console
+        search_console = build('searchconsole', 'v1', credentials=credentials)
+        
+        # Métricas gerais
+        query = {
+            'startDate': start_date,
+            'endDate': end_date,
+            'dimensions': ['date'],
+            'rowLimit': 31  # Para cobrir um mês inteiro
+        }
+        
+        response = search_console.searchanalytics().query(siteUrl=site_url, body=query).execute()
+        
+        # Consultas principais
+        query_terms = {
+            'startDate': start_date,
+            'endDate': end_date,
+            'dimensions': ['query'],
+            'rowLimit': 10
+        }
+        
+        top_queries = search_console.searchanalytics().query(siteUrl=site_url, body=query_terms).execute()
+        
+        # Páginas com melhor desempenho
+        top_pages_query = {
+            'startDate': start_date,
+            'endDate': end_date,
+            'dimensions': ['page'],
+            'rowLimit': 10
+        }
+        
+        top_pages = search_console.searchanalytics().query(siteUrl=site_url, body=top_pages_query).execute()
+        
+        # Processar resultados
+        results = {
+            'performance_by_date': _process_performance_by_date(response),
+            'top_queries': _process_top_queries(top_queries),
+            'top_pages': _process_top_pages(top_pages)
+        }
+        
+        # Calcular métricas agregadas
+        agg_metrics = _calculate_aggregate_metrics(response)
+        results.update(agg_metrics)
+        
+        return results
+        
+    except Exception as e:
+        logging.error(f"Erro ao obter dados do Search Console: {str(e)}")
+        raise
 
 def _process_performance_by_date(response):
     """Processa dados de desempenho diário."""

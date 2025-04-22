@@ -99,7 +99,7 @@ def test_integration():
         print(f"❌ Erro ao fazer upload do relatório: {str(e)}")
     
     # 5. Testar notificação (opcional - remova comentário para testar)
-    """
+    
     print("\nTestando notificação por e-mail...")
     try:
         pdf_buffer.seek(0)
@@ -117,7 +117,7 @@ def test_integration():
             print(f"❌ Erro ao notificar cliente: {message}")
     except Exception as e:
         print(f"❌ Erro ao notificar cliente: {str(e)}")
-    """
+    
     
     print("\nTeste de integração concluído!")
 
