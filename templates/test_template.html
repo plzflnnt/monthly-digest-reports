@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Mensal - {{client_name}} - {{month_name}} {{year}}</title>
+    <style>
+        /* Estilos CSS do template */
+        /* Definindo variáveis com as cores da marca */
+        :root {
+            --primary: #111218;
+            --secondary: #935FA7;
+            --light: #FDF7FA;
+            --accent: #F2C354;
+            --chart-accent1: #FF6B6C;
+            --chart-accent2: #A1E8CC;
+        }
+        
+        /* ... (aqui viriam todos os estilos do template) ... */
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+        }
+        
+        body {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Template simplificado para teste -->
+        <h1>Relatório Mensal - {{client_name}} - {{month_name}} {{year}}</h1>
+        
+        <!-- Dados básicos -->
+        <div>Visitas: {{sessions}}</div>
+        <div>Usuários: {{users}}</div>
+        <div>Impressões: {{impressions}}</div>
+        <div>Cliques: {{clicks}}</div>
+        
+        <!-- Gráficos -->
+        <div>{{trend_chart}}</div>
+        <div>{{devices_chart}}</div>
+        <div>{{traffic_sources_chart}}</div>
+        <div>{{search_performance_chart}}</div>
+        
+        <!-- Tabelas -->
+        <h2>Páginas mais visitadas</h2>
+        <div>{{top_pages_rows}}</div>
+        
+        <h2>Palavras-chave</h2>
+        <div>{{top_queries_rows}}</div>
+        
+        <!-- Resumo -->
+        <h2>Resumo</h2>
+        <div>{{monthly_summary}}</div>
+        
+        <h2>Insights</h2>
+        <div>{{insights_list}}</div>
+    </div>
+</body>
+</html>

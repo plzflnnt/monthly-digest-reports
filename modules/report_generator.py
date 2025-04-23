@@ -1,28 +1,33 @@
 import json
 import os
 from datetime import datetime
+import io
+import base64
+from google.cloud import storage
 import matplotlib.pyplot as plt
 import pandas as pd
-from fpdf import FPDF
-import io
-from google.cloud import storage
-import tempfile
+import numpy as np
+import jinja2
+from weasyprint import HTML, CSS
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.io as pio
+from utils.data_processing import calculate_growth, format_number, format_percentage
 
-class ReportGenerator:
+class ModernReportGenerator:
     def __init__(self, client_config, template_path, month, year, language='pt-BR'):
         """
-        Inicializa o gerador de relatórios.
+        Inicializa o gerador de relatórios moderno.
         
         Args:
             client_config: Configuração do cliente
-            template_path: Caminho para o template do relatório
+            template_path: Caminho para o template HTML do relatório
             month: Mês do relatório (1-12)
             year: Ano do relatório
             language: Idioma do relatório
         """
         self.client = client_config
-        with open(template_path, 'r') as f:
-            self.template = json.load(f)
         self.month = month
         self.year = year
         self.language = language
@@ -33,256 +38,800 @@ class ReportGenerator:
             'pt-BR': ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
         }
+        
+        # Carrega o template HTML
+        with open(template_path, 'r', encoding='utf-8') as f:
+            self.template_source = f.read()
+        
+        # Configurar o ambiente Jinja2
+        self.jinja_env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(os.path.dirname(template_path))
+        )
+        self.template = self.jinja_env.from_string(self.template_source)
+        
+        # Gerar dados do mês anterior para comparação
+        self.prev_month_data = None
+        
+        # Dados anuais para destaque
+        self.annual_data = None
     
     def add_data(self, source, data):
         """Adiciona dados ao relatório."""
         self.report_data[source] = data
     
-    def generate_pdf(self):
-        """Gera o relatório em PDF."""
-        temp_files = []  # Lista para armazenar caminhos de arquivos temporários
-        
-        pdf = FPDF()
-        pdf.add_page()
-        
-        # Configuração da fonte
-        pdf.set_font('Arial', 'B', 16)
-        
-        # Título do relatório
-        month_name = self.month_names.get(self.language, [])[self.month - 1]
-        title = f"Relatório Mensal - {self.client['name']} - {month_name} {self.year}"
-        pdf.cell(0, 10, title, 0, 1, 'C')
-        
-        # Adicionar cada seção conforme o template
-        for section in self.template['sections']:
-            result = self._add_section(pdf, section)
-            if result and isinstance(result, list):
-                temp_files.extend(result)
-        
-        # Salvar o PDF em memória usando um arquivo temporário
-        temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-        temp_pdf.close()
-        
-        pdf.output(temp_pdf.name)
-        
-        # Ler o arquivo PDF para um buffer
-        with open(temp_pdf.name, 'rb') as f:
-            pdf_buffer = io.BytesIO(f.read())
-        
-        # Limpar arquivos temporários
-        try:
-            os.unlink(temp_pdf.name)
-        except:
-            pass
-            
-        for temp_file in temp_files:
-            try:
-                os.unlink(temp_file)
-            except:
-                pass
-            
-        return pdf_buffer
+    def add_previous_month_data(self, analytics_data, search_console_data):
+        """Adiciona dados do mês anterior para comparação."""
+        self.prev_month_data = {
+            'analytics': analytics_data,
+            'search_console': search_console_data
+        }
     
-    def _add_section(self, pdf, section):
-        """Adiciona uma seção ao relatório."""
-        temp_files = []  # Lista para armazenar caminhos de arquivos temporários
-        
-        pdf.set_font('Arial', 'B', 14)
-        pdf.ln(10)
-        pdf.cell(0, 10, section['title'], 0, 1, 'L')
-        pdf.set_font('Arial', '', 12)
-        
-        # Adicionar conteúdo específico para cada tipo de seção
-        if section['name'] == 'resumo':
-            self._add_summary_section(pdf)
-        elif section['name'] == 'analytics':
-            files = self._add_analytics_section(pdf)
-            if files:
-                temp_files.extend(files)
-        elif section['name'] == 'search_console':
-            files = self._add_search_console_section(pdf)
-            if files:
-                temp_files.extend(files)
-        
-        return temp_files
+    def add_annual_data(self, analytics_data, search_console_data):
+        """Adiciona dados anuais para destaque."""
+        self.annual_data = {
+            'analytics': analytics_data,
+            'search_console': search_console_data
+        }
     
-    def _add_summary_section(self, pdf):
-        """Adiciona a seção de resumo."""
-        pdf.ln(5)
+    def _create_trend_chart(self):
+        """Cria gráfico de tendência de visitas e usuários."""
+        # Obter dados diários de visitas
         analytics_data = self.report_data.get('analytics', {})
-        search_console_data = self.report_data.get('search_console', {})
+        if 'daily_metrics' not in analytics_data:
+            return None
         
-        # Visitas e usuários
-        if 'basic_metrics' in analytics_data:
-            pdf.cell(0, 8, f"Usuários únicos: {analytics_data['basic_metrics']['total_users']}", 0, 1)
-            pdf.cell(0, 8, f"Sessões: {analytics_data['basic_metrics']['sessions']}", 0, 1)
-            pdf.cell(0, 8, f"Taxa de engajamento: {float(analytics_data['basic_metrics']['engagement_rate'])*100:.2f}%", 0, 1)
-        
-        # Dados de Search Console
-        if 'total_impressions' in search_console_data:
-            pdf.cell(0, 8, f"Impressões em buscas: {int(search_console_data['total_impressions'])}", 0, 1)
-            pdf.cell(0, 8, f"Cliques em buscas: {int(search_console_data['total_clicks'])}", 0, 1)
-            pdf.cell(0, 8, f"CTR médio: {float(search_console_data['avg_ctr'])*100:.2f}%", 0, 1)
-            pdf.cell(0, 8, f"Posição média: {float(search_console_data['avg_position']):.1f}", 0, 1)
-        
-        return []
-    
-    def _add_analytics_section(self, pdf):
-        """Adiciona a seção de Analytics."""
-        temp_files = []
-        
-        analytics_data = self.report_data.get('analytics', {})
-        if not analytics_data:
-            pdf.cell(0, 8, "Dados do Google Analytics não disponíveis.", 0, 1)
-            return temp_files
-        
-        # Principais páginas
-        pdf.ln(5)
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 8, "Páginas Mais Visitadas:", 0, 1)
-        pdf.set_font('Arial', '', 10)
-        
-        if 'top_pages' in analytics_data:
-            for i, page in enumerate(analytics_data['top_pages'][:5], 1):
-                pdf.cell(0, 6, f"{i}. {page['title']} - {page['views']} visualizações", 0, 1)
-        
-        # Dispositivos
-        pdf.ln(5)
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 8, "Dispositivos:", 0, 1)
-        pdf.set_font('Arial', '', 10)
-        
-        if 'devices' in analytics_data:
-            devices = analytics_data['devices']
-            for device, sessions in devices.items():
-                pdf.cell(0, 6, f"{device}: {sessions} sessões", 0, 1)
-            
-            # Gráfico de dispositivos
-            pie_chart = self._create_device_chart(devices)
-            temp_files.append(pie_chart)
-            pdf.image(pie_chart, x=10, y=None, w=80)
-        
-        # Fontes de tráfego
-        pdf.ln(5)
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 8, "Principais Fontes de Tráfego:", 0, 1)
-        pdf.set_font('Arial', '', 10)
-        
-        if 'traffic_sources' in analytics_data:
-            for i, source in enumerate(analytics_data['traffic_sources'][:5], 1):
-                pdf.cell(0, 6, f"{i}. {source['source']} / {source['medium']} - {source['sessions']} sessões", 0, 1)
-        
-        return temp_files
-    
-    def _add_search_console_section(self, pdf):
-        """Adiciona a seção de Search Console."""
-        temp_files = []
-        
-        search_console_data = self.report_data.get('search_console', {})
-        if not search_console_data:
-            pdf.cell(0, 8, "Dados do Search Console não disponíveis.", 0, 1)
-            return temp_files
-        
-        # Consultas principais
-        pdf.ln(5)
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 8, "Consultas Principais:", 0, 1)
-        pdf.set_font('Arial', '', 10)
-        
-        if 'top_queries' in search_console_data:
-            for i, query in enumerate(search_console_data['top_queries'][:5], 1):
-                pdf.cell(0, 6, f"{i}. {query['query']} - {int(query['clicks'])} cliques, posição {query['position']:.1f}", 0, 1)
-        
-        # Páginas com melhor desempenho
-        pdf.ln(5)
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 8, "Páginas com Melhor Desempenho:", 0, 1)
-        pdf.set_font('Arial', '', 10)
-        
-        if 'top_pages' in search_console_data:
-            for i, page in enumerate(search_console_data['top_pages'][:5], 1):
-                page_url = page['page'].replace(self.client['search_console']['site_url'], '')
-                pdf.cell(0, 6, f"{i}. {page_url} - {int(page['impressions'])} impressões, {int(page['clicks'])} cliques", 0, 1)
-                
-        # Gráfico de desempenho diário
-        if 'performance_by_date' in search_console_data:
-            performance_chart = self._create_performance_chart(search_console_data['performance_by_date'])
-            temp_files.append(performance_chart)
-            pdf.image(performance_chart, x=10, y=None, w=180)
-        
-        return temp_files
-    
-    def _create_device_chart(self, devices):
-        """Cria um gráfico de pizza de dispositivos."""
-        plt.figure(figsize=(6, 4))
-        labels = list(devices.keys())
-        sizes = list(devices.values())
-        
-        plt.pie(sizes, labels=labels, autopct='%1.1f%%')
-        plt.axis('equal')
-        plt.title('Distribuição de Sessões por Dispositivo')
-        
-        # Criar arquivo temporário
-        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-        temp_filename = temp.name
-        temp.close()
-        
-        # Salvar para arquivo temporário
-        plt.savefig(temp_filename, format='png')
-        plt.close()
-        
-        return temp_filename
-    
-    def _create_performance_chart(self, performance_data):
-        """Cria um gráfico de desempenho diário."""
-        plt.figure(figsize=(10, 5))
+        daily_data = analytics_data['daily_metrics']
         
         # Converter para DataFrame
-        df = pd.DataFrame(performance_data)
-        
-        # Formatar datas
+        df = pd.DataFrame(daily_data)
         df['date'] = pd.to_datetime(df['date'])
         df = df.sort_values('date')
         
-        # Plot de impressões e cliques
-        plt.subplot(1, 2, 1)
-        plt.plot(df['date'], df['impressions'], 'b-', label='Impressões')
-        plt.plot(df['date'], df['clicks'], 'r-', label='Cliques')
-        plt.title('Impressões e Cliques')
-        plt.xticks(rotation=45)
-        plt.legend()
+        # Criar gráfico com Plotly
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
         
-        # Plot de CTR e posição
-        plt.subplot(1, 2, 2)
-        plt.plot(df['date'], df['ctr'] * 100, 'g-', label='CTR (%)')
-        plt.plot(df['date'], df['position'], 'm-', label='Posição')
-        plt.title('CTR e Posição Média')
-        plt.xticks(rotation=45)
-        plt.legend()
+        # Adicionar linha de visitas
+        fig.add_trace(
+            go.Scatter(
+                x=df['date'], 
+                y=df['sessions'], 
+                name="Visitas",
+                line=dict(color='#935FA7', width=3),
+                mode='lines'
+            )
+        )
         
-        plt.tight_layout()
+        # Adicionar linha de usuários
+        fig.add_trace(
+            go.Scatter(
+                x=df['date'], 
+                y=df['users'], 
+                name="Usuários",
+                line=dict(color='#F2C354', width=3, dash='dot'),
+                mode='lines'
+            ),
+            secondary_y=False
+        )
         
-        # Criar arquivo temporário
-        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-        temp_filename = temp.name
-        temp.close()
+        # Atualizar layout
+        fig.update_layout(
+            title=None,
+            xaxis_title=None,
+            yaxis_title="Número de Visitas/Usuários",
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            template="plotly_white",
+            height=300,
+            margin=dict(l=10, r=10, t=10, b=10)
+        )
         
-        # Salvar para arquivo temporário
-        plt.savefig(temp_filename, format='png')
-        plt.close()
+        # Salvar como imagem
+        img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
+        img_base64 = base64.b64encode(img_bytes).decode('ascii')
         
-        return temp_filename
-
-def upload_report(pdf_buffer, client_id, year, month, bucket_name='monthly-digest-reports'):
-    """Faz upload do relatório para o Cloud Storage."""
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
+        return f"data:image/png;base64,{img_base64}"
     
-    # Formatar o nome do arquivo
-    filename = f"{client_id}/report_{year}_{month:02d}.pdf"
+    def _create_devices_chart(self):
+        """Cria gráfico de dispositivos."""
+        analytics_data = self.report_data.get('analytics', {})
+        if 'devices' not in analytics_data:
+            return None
+        
+        devices = analytics_data['devices']
+        
+        # Preparar dados
+        labels = list(devices.keys())
+        values = list(devices.values())
+        
+        # Criar gráfico de pizza com Plotly
+        fig = go.Figure(data=[go.Pie(
+            labels=labels,
+            values=values,
+            hole=.4,
+            textinfo='label+percent',
+            marker=dict(colors=['#935FA7', '#F2C354', '#111218'])
+        )])
+        
+        fig.update_layout(
+            title=None,
+            legend=dict(
+                orientation="h", 
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            template="plotly_white",
+            height=250,
+            margin=dict(l=10, r=10, t=10, b=10)
+        )
+        
+        # Salvar como imagem
+        img_bytes = pio.to_image(fig, format="png", width=400, height=250, scale=2)
+        img_base64 = base64.b64encode(img_bytes).decode('ascii')
+        
+        return f"data:image/png;base64,{img_base64}"
     
-    # Fazer upload do arquivo
-    blob = bucket.blob(filename)
-    blob.upload_from_file(pdf_buffer, content_type='application/pdf')
+    def _create_traffic_sources_chart(self):
+        """Cria gráfico de fontes de tráfego."""
+        analytics_data = self.report_data.get('analytics', {})
+        if 'traffic_sources' not in analytics_data:
+            return None
+        
+        # Processa as fontes de tráfego
+        sources = {}
+        for source in analytics_data['traffic_sources']:
+            medium = source['medium']
+            # Simplifica as fontes para categorias mais amplas
+            if medium == 'organic':
+                category = 'Orgânico'
+            elif medium == 'referral':
+                category = 'Referência'
+            elif medium == 'social':
+                category = 'Social'
+            elif medium == 'email':
+                category = 'Email'
+            elif medium == '(none)' or medium == 'direct':
+                category = 'Direto'
+            else:
+                category = 'Outros'
+            
+            if category in sources:
+                sources[category] += int(source['sessions'])
+            else:
+                sources[category] = int(source['sessions'])
+        
+        # Preparar dados para o gráfico
+        df = pd.DataFrame({
+            'Fonte': list(sources.keys()),
+            'Sessões': list(sources.values())
+        })
+        df = df.sort_values('Sessões', ascending=False)
+        
+        # Criar gráfico de barras com Plotly
+        fig = px.bar(
+            df, 
+            x='Fonte', 
+            y='Sessões',
+            color='Fonte',
+            color_discrete_map={
+                'Orgânico': '#935FA7',
+                'Direto': '#F2C354',
+                'Referência': '#FF6B6C',
+                'Social': '#A1E8CC',
+                'Email': '#111218',
+                'Outros': '#999999'
+            },
+            text='Sessões'
+        )
+        
+        # Atualizar layout
+        fig.update_layout(
+            title=None,
+            xaxis_title=None,
+            yaxis_title="Número de Sessões",
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            template="plotly_white",
+            height=300,
+            margin=dict(l=10, r=10, t=10, b=10)
+        )
+        
+        fig.update_traces(texttemplate='%{text}', textposition='outside')
+        
+        # Salvar como imagem
+        img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
+        img_base64 = base64.b64encode(img_bytes).decode('ascii')
+        
+        return f"data:image/png;base64,{img_base64}"
     
-    return f"gs://{bucket_name}/{filename}"
+    def _create_search_performance_chart(self):
+        """Cria gráfico de desempenho nas buscas."""
+        search_console_data = self.report_data.get('search_console', {})
+        if 'performance_by_date' not in search_console_data:
+            return None
+        
+        # Obter dados de desempenho diário
+        performance_data = search_console_data['performance_by_date']
+        
+        # Converter para DataFrame
+        df = pd.DataFrame(performance_data)
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.sort_values('date')
+        
+        # Criar gráfico com subplots
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        
+        # Adicionar linha de impressões
+        fig.add_trace(
+            go.Scatter(
+                x=df['date'], 
+                y=df['impressions'], 
+                name="Impressões",
+                line=dict(color='#935FA7', width=3),
+                mode='lines'
+            ),
+            secondary_y=False
+        )
+        
+        # Adicionar linha de cliques
+        fig.add_trace(
+            go.Scatter(
+                x=df['date'], 
+                y=df['clicks'], 
+                name="Cliques",
+                line=dict(color='#F2C354', width=3),
+                mode='lines'
+            ),
+            secondary_y=False
+        )
+        
+        # Adicionar linha de posição média (eixo secundário, invertido)
+        fig.add_trace(
+            go.Scatter(
+                x=df['date'], 
+                y=df['position'], 
+                name="Posição Média",
+                line=dict(color='#FF6B6C', width=2, dash='dash'),
+                mode='lines'
+            ),
+            secondary_y=True
+        )
+        
+        # Configurar eixos
+        fig.update_yaxes(title_text="Impressões e Cliques", secondary_y=False)
+        fig.update_yaxes(title_text="Posição Média", secondary_y=True, autorange="reversed")
+        
+        # Atualizar layout
+        fig.update_layout(
+            title=None,
+            xaxis_title=None,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            template="plotly_white",
+            height=300,
+            margin=dict(l=10, r=10, t=10, b=10)
+        )
+        
+        # Salvar como imagem
+        img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
+        img_base64 = base64.b64encode(img_bytes).decode('ascii')
+        
+        return f"data:image/png;base64,{img_base64}"
+    
+    def _generate_device_insight(self, devices):
+        """Gera uma análise sobre o uso de dispositivos."""
+        if not devices:
+            return "Não há dados suficientes para análise de dispositivos."
+        
+        # Calcular porcentagens
+        total = sum(devices.values())
+        percentages = {k: (float(v) / total) * 100 for k, v in devices.items()}
+        
+        # Verificar qual dispositivo é predominante
+        if 'mobile' in percentages and percentages.get('mobile', 0) > 60:
+            return ("A maioria dos seus visitantes usa dispositivos móveis. Certifique-se de que seu site "
+                   "esteja otimizado para celulares, com botões de fácil acesso e carregamento rápido "
+                   "para melhorar a experiência desses usuários.")
+        elif 'desktop' in percentages and percentages.get('desktop', 0) > 60:
+            return ("A maioria dos seus visitantes usa computadores desktop. Isso pode indicar um público "
+                   "mais corporativo ou que acessa seu site durante o horário de trabalho. Considere otimizar "
+                   "o conteúdo para telas maiores e experiências mais completas.")
+        else:
+            return ("Seu tráfego está bem distribuído entre diferentes dispositivos. Mantenha um design "
+                   "responsivo que funcione bem em qualquer tamanho de tela para garantir uma boa "
+                   "experiência para todos os usuários.")
+    
+    def _generate_monthly_summary(self, analytics_data, search_console_data):
+        """Gera um resumo mensal com base nos dados disponíveis."""
+        # Verificar se há dados para comparação
+        has_prev_data = self.prev_month_data is not None
+        
+        summary_parts = []
+        
+        # Analisar visitas e usuários
+        if 'basic_metrics' in analytics_data:
+            sessions = int(analytics_data['basic_metrics']['sessions'])
+            users = int(analytics_data['basic_metrics']['total_users'])
+            
+            if has_prev_data and 'analytics' in self.prev_month_data:
+                prev_sessions = int(self.prev_month_data['analytics']['basic_metrics']['sessions'])
+                prev_users = int(self.prev_month_data['analytics']['basic_metrics']['total_users'])
+                
+                sessions_growth = calculate_growth(sessions, prev_sessions)
+                users_growth = calculate_growth(users, prev_users)
+                
+                if sessions_growth > 10:
+                    summary_parts.append(f"Seu site teve um crescimento expressivo de {sessions_growth:.1f}% nas visitas em relação ao mês anterior.")
+                elif sessions_growth > 0:
+                    summary_parts.append(f"As visitas ao seu site aumentaram {sessions_growth:.1f}% em comparação com o mês passado.")
+                elif sessions_growth < -10:
+                    summary_parts.append(f"Houve uma redução significativa de {abs(sessions_growth):.1f}% nas visitas em relação ao mês anterior.")
+                else:
+                    summary_parts.append("O número de visitas se manteve estável em relação ao mês anterior.")
+            else:
+                summary_parts.append(f"Seu site recebeu {sessions} visitas e {users} usuários únicos neste mês.")
+        
+        # Analisar desempenho no Google
+        if 'total_impressions' in search_console_data:
+            impressions = int(search_console_data['total_impressions'])
+            clicks = int(search_console_data['total_clicks'])
+            ctr = float(search_console_data['avg_ctr']) * 100
+            position = float(search_console_data['avg_position'])
+            
+            if has_prev_data and 'search_console' in self.prev_month_data:
+                prev_impressions = int(self.prev_month_data['search_console']['total_impressions'])
+                prev_clicks = int(self.prev_month_data['search_console']['total_clicks'])
+                
+                impressions_growth = calculate_growth(impressions, prev_impressions)
+                clicks_growth = calculate_growth(clicks, prev_clicks)
+                
+                if impressions_growth > 0 and clicks_growth > 0:
+                    summary_parts.append(f"A visibilidade nas buscas do Google aumentou, com crescimento de {impressions_growth:.1f}% nas impressões e {clicks_growth:.1f}% nos cliques.")
+                elif impressions_growth > 0 and clicks_growth <= 0:
+                    summary_parts.append(f"Apesar do aumento de {impressions_growth:.1f}% nas impressões no Google, os cliques diminuíram {abs(clicks_growth):.1f}%.")
+                elif impressions_growth <= 0 and clicks_growth > 0:
+                    summary_parts.append(f"Mesmo com redução nas impressões, seu site conseguiu {clicks_growth:.1f}% mais cliques do Google.")
+                else:
+                    summary_parts.append(f"Houve redução de {abs(impressions_growth):.1f}% nas impressões e {abs(clicks_growth):.1f}% nos cliques vindos do Google.")
+            else:
+                if position < 10:
+                    summary_parts.append(f"Seu site apareceu em média na posição {position:.1f} nos resultados de busca, gerando {impressions} impressões e {clicks} cliques.")
+                else:
+                    summary_parts.append(f"Seu site recebeu {clicks} cliques a partir de {impressions} impressões no Google, com uma taxa de cliques de {ctr:.1f}%.")
+        
+        # Analisar fontes de tráfego
+        if 'traffic_sources' in analytics_data:
+            sources = {}
+            for source in analytics_data['traffic_sources'][:3]:
+                medium = source['medium']
+                # Simplifica as fontes 
+                if medium == 'organic':
+                    category = 'buscadores orgânicos'
+                elif medium == 'referral':
+                    category = 'sites que apontam para o seu'
+                elif medium == 'social':
+                    category = 'redes sociais'
+                elif medium == 'email':
+                    category = 'campanhas de email'
+                elif medium == '(none)' or medium == 'direct':
+                    category = 'tráfego direto'
+                else:
+                    category = medium
+                
+                sources[category] = int(source['sessions'])
+            
+            if sources:
+                top_source = max(sources.items(), key=lambda x: x[1])
+                summary_parts.append(f"A principal fonte de visitas foi {top_source[0]}, responsável por {top_source[1]} sessões.")
+        
+        # Combinar tudo em um parágrafo coeso
+        if summary_parts:
+            return " ".join(summary_parts)
+        else:
+            return "Não há dados suficientes para gerar um resumo detalhado para este mês."
+    
+    def _generate_insights(self, analytics_data, search_console_data):
+        """Gera insights baseados nos dados."""
+        insights = []
+        
+        # Verificar dados de dispositivos
+        if 'devices' in analytics_data:
+            devices = analytics_data['devices']
+            total = sum(devices.values())
+            
+            if 'mobile' in devices and (devices['mobile'] / total) > 0.6:
+                insights.append("O tráfego móvel representa mais de 60% das visitas. Considere revisar a experiência em dispositivos móveis e adicionar recursos específicos para esses usuários.")
+            
+            if 'desktop' in devices and 'mobile' in devices:
+                desktop_pct = devices['desktop'] / total
+                mobile_pct = devices['mobile'] / total
+                
+                if abs(desktop_pct - mobile_pct) < 0.1:  # Diferença menor que 10%
+                    insights.append("Seu site tem uma distribuição equilibrada entre desktop e mobile. Continue mantendo uma experiência consistente em ambas as plataformas.")
+        
+        # Verificar taxa de rejeição
+        if 'basic_metrics' in analytics_data and 'bounce_rate' in analytics_data['basic_metrics']:
+            bounce_rate = float(analytics_data['basic_metrics']['bounce_rate'])
+            
+            if bounce_rate > 70:
+                insights.append("A taxa de rejeição está acima de 70%. Considere melhorar o conteúdo inicial ou adicionar elementos que incentivem o visitante a navegar mais pelo site.")
+            elif bounce_rate < 40:
+                insights.append("A taxa de rejeição está abaixo de 40%, o que é excelente! Os visitantes estão engajados com seu conteúdo.")
+        
+        # Verificar posição média nas buscas
+        if 'avg_position' in search_console_data:
+            position = float(search_console_data['avg_position'])
+            
+            if position <= 10:
+                insights.append(f"Seu site aparece em média na posição {position:.1f} nas buscas, o que é excelente! Continue otimizando seu conteúdo para manter essas posições.")
+            elif position > 20:
+                insights.append(f"A posição média nas buscas é {position:.1f}, o que significa que seu site geralmente não aparece na primeira página. Considere uma estratégia de SEO para melhorar o posicionamento.")
+        
+        # Verificar CTR
+        if 'avg_ctr' in search_console_data:
+            ctr = float(search_console_data['avg_ctr']) * 100
+            
+            if ctr < 1.5:
+                insights.append(f"A taxa de cliques (CTR) de {ctr:.1f}% está abaixo da média. Considere revisar os títulos e descrições das suas páginas para torná-los mais atrativos.")
+            elif ctr > 4:
+                insights.append(f"A taxa de cliques (CTR) de {ctr:.1f}% está acima da média, o que indica que seus títulos e descrições são eficazes.")
+        
+        # Verificar tempo médio no site
+        if 'basic_metrics' in analytics_data and 'avg_session_duration' in analytics_data['basic_metrics']:
+            duration = analytics_data['basic_metrics']['avg_session_duration']
+            duration_seconds = float(duration)
+            
+            if duration_seconds < 60:
+                insights.append(f"O tempo médio de sessão é de apenas {duration_seconds:.0f} segundos. Considere adicionar mais conteúdo relevante para aumentar o engajamento.")
+            elif duration_seconds > 180:
+                insights.append(f"Os visitantes passam em média mais de 3 minutos no seu site, o que indica um bom nível de engajamento com o conteúdo.")
+        
+        # Verificar crescimento
+        if self.prev_month_data and 'analytics' in self.prev_month_data:
+            current_sessions = int(analytics_data['basic_metrics']['sessions'])
+            prev_sessions = int(self.prev_month_data['analytics']['basic_metrics']['sessions'])
+            
+            growth = calculate_growth(current_sessions, prev_sessions)
+            
+            if growth > 20:
+                insights.append(f"Crescimento impressionante de {growth:.1f}% nas visitas! Analise quais ações podem ter contribuído para este resultado.")
+            elif growth < -20:
+                insights.append(f"Redução significativa de {abs(growth):.1f}% nas visitas. Verifique se houve mudanças recentes no site ou em estratégias de marketing.")
+        
+        # Formatar lista de insights
+        formatted_insights = ""
+        for insight in insights:
+            formatted_insights += f"<li>{insight}</li>\n"
+        
+        return formatted_insights
+    
+    def generate_html(self):
+        """Gera o HTML do relatório."""
+        # Obter dados de analytics e search console
+        analytics_data = self.report_data.get('analytics', {})
+        search_console_data = self.report_data.get('search_console', {})
+        
+        # Preparar dados para o template
+        month_name = self.month_names.get(self.language, [])[self.month - 1]
+        
+        # Processar métricas básicas
+        basic_metrics = analytics_data.get('basic_metrics', {})
+        sessions = format_number(int(basic_metrics.get('sessions', 0)))
+        users = format_number(int(basic_metrics.get('total_users', 0)))
+        
+        # Calcular mudanças em relação ao mês anterior
+        sessions_change = 0
+        users_change = 0
+        impressions_change = 0
+        clicks_change = 0
+        
+        if self.prev_month_data:
+            prev_analytics = self.prev_month_data.get('analytics', {})
+            prev_search = self.prev_month_data.get('search_console', {})
+            
+            prev_basic = prev_analytics.get('basic_metrics', {})
+            
+            # Calcular mudanças
+            sessions_change = calculate_growth(
+                int(basic_metrics.get('sessions', 0)),
+                int(prev_basic.get('sessions', 0))
+            )
+            
+            users_change = calculate_growth(
+                int(basic_metrics.get('total_users', 0)),
+                int(prev_basic.get('total_users', 0))
+            )
+            
+            impressions_change = calculate_growth(
+                int(search_console_data.get('total_impressions', 0)),
+                int(prev_search.get('total_impressions', 0))
+            )
+            
+            clicks_change = calculate_growth(
+                int(search_console_data.get('total_clicks', 0)),
+                int(prev_search.get('total_clicks', 0))
+            )
+        
+        # Preparar classes para indicadores de crescimento
+        sessions_change_class = "positive" if sessions_change >= 0 else "negative"
+        users_change_class = "positive" if users_change >= 0 else "negative"
+        impressions_change_class = "positive" if impressions_change >= 0 else "negative"
+        clicks_change_class = "positive" if clicks_change >= 0 else "negative"
+        
+        # Preparar ícones para indicadores de crescimento
+        sessions_change_icon = "↑" if sessions_change >= 0 else "↓"
+        users_change_icon = "↑" if users_change >= 0 else "↓"
+        impressions_change_icon = "↑" if impressions_change >= 0 else "↓"
+        clicks_change_icon = "↑" if clicks_change >= 0 else "↓"
+        
+        # Formatar mudanças como números absolutos
+        sessions_change = abs(sessions_change)
+        users_change = abs(users_change)
+        impressions_change = abs(impressions_change)
+        clicks_change = abs(clicks_change)
+        
+        # Processar dados do Search Console
+        impressions = format_number(int(search_console_data.get('total_impressions', 0)))
+        clicks = format_number(int(search_console_data.get('total_clicks', 0)))
+        ctr = format_number(float(search_console_data.get('avg_ctr', 0)) * 100, 1)
+        avg_position = format_number(float(search_console_data.get('avg_position', 0)), 1)
+        
+        # Calcular porcentagem para a barra de posição (1 é ótimo, 50 é ruim)
+        position_value = float(search_console_data.get('avg_position', 50))
+        position_percentage = max(0, min(100, 100 - ((position_value - 1) * 2)))
+        
+        # Processar tempo médio no site
+        avg_session_duration = basic_metrics.get('avg_session_duration', 0)
+        minutes = int(float(avg_session_duration) // 60)
+        seconds = int(float(avg_session_duration) % 60)
+        avg_session_duration_formatted = f"{minutes}m {seconds}s"
+        
+        # Calcular taxa de rejeição e páginas por sessão
+        bounce_rate = format_number(float(basic_metrics.get('bounce_rate', 0)) * 100, 1)
+        pages_per_session = format_number(float(basic_metrics.get('pages_per_session', 0)), 1)
+        
+        # Calcular taxa de conversão (se disponível)
+        conversion_rate = format_number(float(basic_metrics.get('conversion_rate', 0)) * 100, 2)
+        
+        # Processar dispositivos
+        devices = analytics_data.get('devices', {})
+        device_insight = self._generate_device_insight(devices)
+        
+        # Tempo médio por dispositivo
+        mobile_avg_time = "N/A"
+        desktop_avg_time = "N/A"
+        
+        if 'devices_metrics' in analytics_data:
+            device_metrics = analytics_data.get('devices_metrics', {})
+            
+            if 'mobile' in device_metrics:
+                mobile_seconds = float(device_metrics['mobile'].get('avg_time', 0))
+                mobile_minutes = int(mobile_seconds // 60)
+                mobile_secs = int(mobile_seconds % 60)
+                mobile_avg_time = f"{mobile_minutes}m {mobile_secs}s"
+            
+            if 'desktop' in device_metrics:
+                desktop_seconds = float(device_metrics['desktop'].get('avg_time', 0))
+                desktop_minutes = int(desktop_seconds // 60)
+                desktop_secs = int(desktop_seconds % 60)
+                desktop_avg_time = f"{desktop_minutes}m {desktop_secs}s"
+        
+        # Processar páginas mais visitadas
+        top_pages_rows = ""
+        if 'top_pages' in analytics_data:
+            for i, page in enumerate(analytics_data['top_pages'][:5], 1):
+                title = page.get('title', 'Página sem título')
+                path = page.get('path', '/')
+                
+                # Limitar tamanho do título
+                if len(title) > 40:
+                    title = title[:37] + "..."
+                
+                views = format_number(int(page.get('views', 0)))
+                
+                # Tempo na página
+                page_time = page.get('time', 0)
+                page_time_min = int(float(page_time) // 60)
+                page_time_sec = int(float(page_time) % 60)
+                page_time_formatted = f"{page_time_min}m {page_time_sec}s"
+                
+                top_pages_rows += f"""
+                <tr>
+                    <td><div class="rank">{i}</div></td>
+                    <td><strong>{title}</strong><br><small>{path}</small></td>
+                    <td>{views}</td>
+                    <td>{page_time_formatted}</td>
+                </tr>
+                """
+        
+        # Processar consultas principais
+        top_queries_rows = ""
+        if 'top_queries' in search_console_data:
+            for i, query in enumerate(search_console_data['top_queries'][:5], 1):
+                query_text = query.get('query', 'Consulta desconhecida')
+                
+                # Limitar tamanho da consulta
+                if len(query_text) > 40:
+                    query_text = query_text[:37] + "..."
+                
+                clicks = format_number(int(query.get('clicks', 0)))
+                impressions = format_number(int(query.get('impressions', 0)))
+                position = format_number(float(query.get('position', 0)), 1)
+                
+                top_queries_rows += f"""
+                <tr>
+                    <td><div class="rank">{i}</div></td>
+                    <td><strong>{query_text}</strong></td>
+                    <td>{clicks}</td>
+                    <td>{impressions}</td>
+                    <td>{position}</td>
+                </tr>
+                """
+        
+        # Processar páginas com melhor desempenho no Google
+        top_search_pages_rows = ""
+        if 'top_pages' in search_console_data:
+            for i, page in enumerate(search_console_data['top_pages'][:5], 1):
+                page_url = page.get('page', 'URL desconhecida')
+                
+                # Limpar URL
+                page_url = page_url.replace(self.client['search_console']['site_url'], '')
+                if page_url == "":
+                    page_url = "/"
+                
+                # Limitar tamanho da URL
+                if len(page_url) > 40:
+                    page_url = page_url[:37] + "..."
+                
+                clicks = format_number(int(page.get('clicks', 0)))
+                impressions = format_number(int(page.get('impressions', 0)))
+                page_ctr = format_number(float(page.get('ctr', 0)) * 100, 1)
+                
+                top_search_pages_rows += f"""
+                <tr>
+                    <td><div class="rank">{i}</div></td>
+                    <td><strong>{page_url}</strong></td>
+                    <td>{clicks}</td>
+                    <td>{impressions}</td>
+                    <td>{page_ctr}%</td>
+                </tr>
+                """
+        
+        # Dados anuais para destaque
+        annual_visits = "0"
+        top_page_annual = "0"
+        
+        if self.annual_data and 'analytics' in self.annual_data:
+            annual_analytics = self.annual_data['analytics']
+            if 'year_metrics' in annual_analytics:
+                annual_visits = format_number(int(annual_analytics['year_metrics'].get('total_sessions', 0)))
+                
+                if 'top_pages_year' in annual_analytics and annual_analytics['top_pages_year']:
+                    top_page = annual_analytics['top_pages_year'][0]
+                    top_page_annual = format_number(int(top_page.get('views', 0)))
+        
+        # Gerar resumo mensal e insights
+        monthly_summary = self._generate_monthly_summary(analytics_data, search_console_data)
+        insights_list = self._generate_insights(analytics_data, search_console_data)
+        
+        # Gerar gráficos
+        trend_chart = self._create_trend_chart()
+        devices_chart = self._create_devices_chart()
+        traffic_sources_chart = self._create_traffic_sources_chart()
+        search_performance_chart = self._create_search_performance_chart()
+        
+        # Data de geração do relatório
+        generation_date = datetime.now().strftime("%d/%m/%Y")
+        
+        # URL do logo
+        logo_url = "https://handelprime.com.br/wp-content/uploads/2019/02/logo-black-e1568310765886.png"
+        
+        # Dados para o template
+        template_data = {
+            'client_name': self.client['name'],
+            'month_name': month_name,
+            'year': self.year,
+            'logo_url': logo_url,
+            'sessions': sessions,
+            'users': users,
+            'impressions': impressions,
+            'clicks': clicks,
+            'sessions_change': format_number(sessions_change, 1),
+            'users_change': format_number(users_change, 1),
+            'impressions_change': format_number(impressions_change, 1),
+            'clicks_change': format_number(clicks_change, 1),
+            'sessions_change_class': sessions_change_class,
+            'users_change_class': users_change_class,
+            'impressions_change_class': impressions_change_class,
+            'clicks_change_class': clicks_change_class,
+            'sessions_change_icon': sessions_change_icon,
+            'users_change_icon': users_change_icon,
+            'impressions_change_icon': impressions_change_icon,
+            'clicks_change_icon': clicks_change_icon,
+            'avg_session_duration': avg_session_duration_formatted,
+            'bounce_rate': bounce_rate,
+            'pages_per_session': pages_per_session,
+            'conversion_rate': conversion_rate,
+            'annual_visits': annual_visits,
+            'top_page_annual': top_page_annual,
+            'device_insight': device_insight,
+            'mobile_avg_time': mobile_avg_time,
+            'desktop_avg_time': desktop_avg_time,
+            'top_pages_rows': top_pages_rows,
+            'top_queries_rows': top_queries_rows,
+            'top_search_pages_rows': top_search_pages_rows,
+            'ctr': ctr,
+            'avg_position': avg_position,
+            'position_percentage': position_percentage,
+            'monthly_summary': monthly_summary,
+            'insights_list': insights_list,
+            'generation_date': generation_date,
+        }
+        
+        # Adicionar gráficos ao template se disponíveis
+        if trend_chart:
+            template_data['trend_chart'] = f'<img src="{trend_chart}" alt="Gráfico de tendência de visitas e usuários" style="width:100%;height:auto;">'
+        else:
+            template_data['trend_chart'] = '<div style="height:300px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">Dados insuficientes para gerar o gráfico</div>'
+            
+        if devices_chart:
+            template_data['devices_chart'] = f'<img src="{devices_chart}" alt="Distribuição de dispositivos" style="width:100%;height:auto;">'
+        else:
+            template_data['devices_chart'] = '<div style="height:250px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">Dados insuficientes para gerar o gráfico</div>'
+            
+        if traffic_sources_chart:
+            template_data['traffic_sources_chart'] = f'<img src="{traffic_sources_chart}" alt="Fontes de tráfego" style="width:100%;height:auto;">'
+        else:
+            template_data['traffic_sources_chart'] = '<div style="height:300px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">Dados insuficientes para gerar o gráfico</div>'
+            
+        if search_performance_chart:
+            template_data['search_performance_chart'] = f'<img src="{search_performance_chart}" alt="Desempenho nas buscas" style="width:100%;height:auto;">'
+        else:
+            template_data['search_performance_chart'] = '<div style="height:300px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">Dados insuficientes para gerar o gráfico</div>'
+        
+        # Renderizar o template
+        html = self.template.render(**template_data)
+        return html
+    
+    def generate_pdf(self):
+        """Gera o relatório em PDF."""
+        # Gerar HTML
+        html = self.generate_html()
+        
+        # Criar PDF a partir do HTML
+        pdf_buffer = io.BytesIO()
+        HTML(string=html).write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+        
+        return pdf_buffer
+    
+    
+    def upload_report(pdf_buffer, client_id, year, month, bucket_name='monthly-digest-reports'):
+        """Faz upload do relatório para o Cloud Storage."""
+        client = storage.Client()
+        bucket = client.bucket(bucket_name)
+        
+        # Formatar o nome do arquivo
+        filename = f"{client_id}/report_{year}_{month:02d}.pdf"
+        
+        # Fazer upload do arquivo
+        blob = bucket.blob(filename)
+        blob.upload_from_file(pdf_buffer, content_type='application/pdf')
+        
+        return f"gs://{bucket_name}/{filename}"
