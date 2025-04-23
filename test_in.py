@@ -218,6 +218,8 @@ def test_integration():
             logger.info("Testando upload para Cloud Storage...")
             try:
                 pdf_buffer.seek(0)
+                # Importe a função upload_report diretamente
+                from modules.report_generator import upload_report
                 report_url = upload_report(
                     pdf_buffer, 
                     client['id'], 

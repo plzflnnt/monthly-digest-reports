@@ -796,11 +796,14 @@ def generate_monthly_reports(event, context):
                 pdf_buffer = report.generate_pdf()
                 
                 # 4. Fazer upload do relatório para o Cloud Storage
-                report_url = report_generator.upload_report(
-                    pdf_buffer, 
-                    client['id'], 
-                    year, 
-                    month
+                pdf_buffer.seek(0)  # Importante: resetar o buffer antes do upload
+                from modules.report_generator import ModernReportGenerator
+                report_url = ModernReportGenerator.upload_report(
+                    pdf_buffer=pdf_buffer, 
+                    client_id=client['id'], 
+                    year=year, 
+                    month=month,
+                    bucket_name='monthly-digest-reports'
                 )
                 logger.info(f"Relatório enviado para: {report_url}")
                 
