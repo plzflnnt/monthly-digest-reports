@@ -1,0 +1,127 @@
+{
+    "clients": [
+      {
+        "id": "handelprime",
+        "name": "Handel Prime",
+        "analytics": {
+          "property_id": "337797572"
+        },
+        "search_console": {
+          "site_url": "sc-domain:handelprime.com.br"
+        },
+        "report_config": {
+          "email": "com.handelprime@gmail.com",
+          "language": "pt-BR"
+        }
+      },
+      {
+        "id": "estrelinhas-no-ceu",
+        "name": "Estrelinhas No Céu",
+        "analytics": {
+          "property_id": "366744888"
+        },
+        "search_console": {
+          "site_url": "https://estrelinhasnoceu.com.br/"
+        },
+        "report_config": {
+          "email": "financeiro@estrelinhasnoceu.com.br",
+          "language": "pt-BR"
+        }
+      },
+      {
+        "id": "estudio-eb",
+        "name": "Estúdio E&B",
+        "analytics": {
+          "property_id": "403778112"
+        },
+        "search_console": {
+          "site_url": "https://estudioeb.arq.br/"
+        },
+        "report_config": {
+          "email": "contato@estudioeb.arq.br",
+          "language": "pt-BR"
+        }
+      },
+      {
+        "id": "pro-animal",
+        "name": "Pro-animal",
+        "analytics": {
+          "property_id": "367436817"
+        },
+        "search_console": {
+          "site_url": "sc-domain:proanimal.vet.br"
+        },
+        "report_config": {
+          "email": "pro-animal@uol.com.br",
+          "language": "pt-BR"
+        }
+      },
+      {
+        "id": "saude-animal",
+        "name": "Clínica Saúde Animal",
+        "analytics": {
+          "property_id": "364472165"
+        },
+        "search_console": {
+          "site_url": "https://clinicasaudeanimal.com/"
+        },
+        "report_config": {
+          "email": "clinicasaudeanimal@hotmail.com",
+          "language": "pt-BR"
+        }
+      },
+      {
+        "id": "pedro-pronievicz",
+        "name": "Pedro Proniewicz",
+        "analytics": {
+          "property_id": "370735349"
+        },
+        "search_console": {
+          "site_url": "https://pedropronievicz.com.br/"
+        },
+        "report_config": {
+          "email": "pedropronievicz@hotmail.com",
+          "language": "pt-BR"
+        }
+      },{
+        "id": "eccos-ambiental",
+        "name": "Eccos Ambiental",
+        "analytics": {
+          "property_id": "390770103"
+        },
+        "search_console": {
+          "site_url": "sc-domain:eccosresiduos.com.br"
+        },
+        "report_config": {
+          "email": "eccos.ambiental@hotmail.com",
+          "language": "pt-BR"
+        }
+      },{
+        "id": "bariri-pvc",
+        "name": "Bariri PVC",
+        "analytics": {
+          "property_id": "375292986"
+        },
+        "search_console": {
+          "site_url": "https://bariripvc.com.br/"
+        },
+        "report_config": {
+          "email": "arthur@bariripvc.com.br",
+          "language": "pt-BR"
+        }
+      },{
+        "id": "galeria-imo",
+        "name": "Galeria Imo",
+        "analytics": {
+          "property_id": "375292986"
+        },
+        "search_console": {
+          "site_url": "https://galeriaimo.com.br/"
+        },
+        "report_config": {
+          "email": "guilherme.bego@outlook.com",
+          "language": "pt-BR"
+        }
+      }
+    ]
+  }
