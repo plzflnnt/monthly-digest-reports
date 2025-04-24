@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Mensal - EstÃºdio E&B - Março 2025</title>
+    <style>
+        /* Cores principais definidas diretamente (sem variáveis CSS) */
+        /* Substituição de var(--primary) por #111218 e assim por diante */
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #FDF7FA; /* var(--light) */
+            color: #111218; /* var(--primary) */
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Cabeçalho do Relatório */
+        .report-header {
+            padding: 25px 15px;
+            background-color: #111218; /* var(--primary) */
+            color: white;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .report-header .logo {
+            max-width: 220px;
+            margin-bottom: 15px;
+        }
+        
+        .report-header h1 {
+            font-size: 28px;
+            font-weight: normal;
+            margin-bottom: 10px;
+        }
+        
+        .report-header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .report-header .period {
+            background-color: #F2C354; /* var(--accent) */
+            color: #111218; /* var(--primary) */
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        /* Cartões de Destaque */
+        .highlight-cards {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+            justify-content: space-between;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            border: 1px solid #eee; /* Substituição de box-shadow */
+            flex: 1;
+            min-width: 230px;
+            position: relative;
+            overflow: hidden;
+            margin: 10px; /* Substituição de gap */
+        }
+        
+        .card h3 {
+            font-size: 15px;
+            color: #935FA7; /* var(--secondary) */
+            margin-bottom: 8px;
+        }
+        
+        .card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #111218; /* var(--primary) */
+            margin-bottom: 5px;
+        }
+        
+        .card .change {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .card .change.positive {
+            color: #2ecc71;
+        }
+        
+        .card .change.negative {
+            color: #e74c3c;
+        }
+        
+        .card .change-icon {
+            margin-right: 5px;
+            font-size: 20px;
+        }
+        
+        .card .accent-bg {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 100%;
+            background-color: #F2C354; /* var(--accent) */
+            opacity: 0.1;
+        }
+        
+        /* Seções do Relatório */
+        .report-section {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border: 1px solid #eee; /* Substituição de box-shadow */
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .section-header .icon {
+            width: 40px;
+            height: 40px;
+            background-color: #935FA7; /* var(--secondary) */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .section-header h2 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        /* Gráficos */
+        .chart-container {
+            margin: 20px 0;
+            height: 300px;
+        }
+        
+        .small-chart {
+            height: 250px;
+        }
+        
+        .chart-row {
+            display: flex;
+            margin-bottom: 25px;
+        }
+        
+        .chart-row .chart-col + .chart-col {
+            margin-left: 25px; /* Substituição de gap */
+        }
+        
+        .chart-col {
+            flex: 1;
+        }
+        
+        /* Tabelas */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table th {
+            background-color: #f9f9f9;
+            color: #111218; /* var(--primary) */
+            font-weight: 600;
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .data-table .rank {
+            width: 40px;
+            height: 25px;
+            background-color: #111218; /* var(--primary) */
+            color: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .data-table tr:nth-child(1) .rank {
+            background-color: #F2C354; /* var(--accent) */
+        }
+        
+        /* Seção de Resumo */
+        .summary-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #935FA7; /* Usando cor direta em vez de var(--secondary) */
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .summary-box h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #935FA7; /* var(--secondary) */
+        }
+        
+        .summary-box p {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        /* Rodapé do relatório */
+        .report-footer {
+            text-align: center;
+            padding: 30px 0;
+            color: #111218; /* var(--primary) */
+            font-size: 13px;
+            opacity: 0.8;
+        }
+        
+        /* Ícones e indicadores */
+        .indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .indicator.good {
+            background-color: rgba(161, 232, 204, 0.2);
+            color: #2ecc71;
+        }
+        
+        .indicator.medium {
+            background-color: rgba(242, 195, 84, 0.2);
+            color: #f39c12;
+        }
+        
+        .indicator.poor {
+            background-color: rgba(255, 107, 108, 0.2);
+            color: #e74c3c;
+        }
+        
+        /* Explicações */
+        .explanation-box {
+            background-color: rgba(147, 95, 167, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .explanation-title {
+            font-weight: 600;
+            color: #935FA7; /* var(--secondary) */
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .explanation-title span {
+            margin-right: 8px;
+        }
+        
+        /* Layout "grid" modificado para usar flex */
+        .metrics-grid {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+        
+        .small-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #f5f5f5; /* Substituição de box-shadow */
+            margin: 10px; /* Substituição de gap */
+            flex: 1 0 200px; /* Substituição de grid-template-columns */
+            border-top: 3px solid #935FA7; /* Cor direta em vez de var(--secondary) */
+        }
+        
+        .small-card h4 {
+            font-size: 14px;
+            color: #111218; /* var(--primary) */
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+        
+        .small-card .value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #111218; /* var(--primary) */
+        }
+        
+        /* Barra de progresso para posição */
+        .position-bar {
+            height: 8px;
+            background-color: #eee;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .position-bar .fill {
+            height: 100%;
+            background-color: #F2C354; /* var(--accent) */
+            border-radius: 4px;
+        }
+        
+        /* Últimos 12 meses highlight */
+        .year-highlight {
+            background-color: #111218; /* var(--primary) */
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .year-highlight h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #F2C354; /* var(--accent) */
+        }
+        
+        .year-highlight .counter {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        
+        .year-highlight p {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        /* Fonte personalizada para números grandes */
+        .big-number {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            letter-spacing: -1px;
+        }
+        
+        @page {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Resto do HTML permanece igual -->
+    <div class="container">
+        <!-- Cabeçalho do relatório -->
+        <div class="report-header">
+            <img src="https://handelprime.com.br/wp-content/uploads/2019/02/logo-white-e1600802257248.png" alt="Handel Prime" class="logo">
+            <h1>Seu Mês na Internet</h1>
+            <p>Os bastidores da sua presença digital, traduzidos pra você EstÃºdio E&B</p>
+            <div class="period">Março 2025</div>
+        </div>
+        
+        <!-- O conteúdo do template continua... -->
+        <!-- Cartões de destaque (métricas principais) -->
+        <div class="highlight-cards">
+            <div class="card">
+                <div class="accent-bg"></div>
+                <h3>Visitas Totais</h3>
+                <div class="value big-number">49</div>
+                <div class="change negative">
+                    <span class="change-icon">↓</span>
+                    38,0% em relação ao mês anterior
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="accent-bg"></div>
+                <h3>Usuários Únicos</h3>
+                <div class="value big-number">44</div>
+                <div class="change negative">
+                    <span class="change-icon">↓</span>
+                    41,3% em relação ao mês anterior
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="accent-bg"></div>
+                <h3>Impressões (Google)</h3>
+                <div class="value big-number">8</div>
+                <div class="change negative">
+                    <span class="change-icon">↓</span>
+                    7,2% em relação ao mês anterior
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="accent-bg"></div>
+                <h3>Cliques (Google)</h3>
+                <div class="value big-number">0</div>
+                <div class="change negative">
+                    <span class="change-icon">↓</span>
+                    28,6% em relação ao mês anterior
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção 1: Visão Geral do Site -->
+        <div class="report-section">
+            <div class="section-header">
+                <div class="icon">📊</div>
+                <h2>Visão Geral do Site</h2>
+            </div>
+            
+            <p>
+                Este mês, seu site alcançou <strong>49 visitas</strong> e <strong>44 usuários únicos</strong>. 
+                Aqui está uma análise de como seu site tem performado ao longo do mês.
+            </p>
+            
+            <!-- Gráfico de tendência visitas/usuários -->
+            <div class="chart-container" id="trend-chart">
+                <!-- Gráfico inserido via JavaScript -->
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="small-card">
+                    <h4>Tempo Médio no Site</h4>
+                    <div class="value">1m 26s</div>
+                </div>
+                
+                <div class="small-card">
+                    <h4>Taxa de Rejeição</h4>
+                    <div class="value">51,0%</div>
+                </div>
+                
+                <div class="small-card">
+                    <h4>Páginas por Sessão</h4>
+                    <div class="value">1,4</div>
+                </div>
+                
+                <div class="small-card">
+                    <h4>Taxa de Conversão</h4>
+                    <div class="value">0,00%</div>
+                </div>
+            </div>
+            
+            <!-- Destaque dos últimos 12 meses -->
+            <div class="year-highlight">
+                <h3>TOTAL DOS ÚLTIMOS 12 MESES</h3>
+                <div class="counter big-number">1.092</div>
+                <p>visitas ao seu site no último ano</p>
+            </div>
+        </div>
+        
+        <!-- Seção 2: Dispositivos e Comportamento -->
+        <div class="report-section">
+            <div class="section-header">
+                <div class="icon">📱</div>
+                <h2>Dispositivos e Comportamento</h2>
+            </div>
+            
+            <p>
+                Entender como seus visitantes acessam seu site é fundamental para otimizar a experiência do usuário.
+                Veja como está a distribuição do tráfego entre dispositivos móveis e desktop:
+            </p>
+            
+            <div class="chart-row">
+                <div class="chart-col">
+                    <div class="chart-container small-chart" id="devices-chart">
+                        <!-- Gráfico inserido via JavaScript -->
+                    </div>
+                </div>
+                <div class="chart-col">
+                    <div class="summary-box">
+                        <h3>O que isso significa?</h3>
+                        <p>
+                            A maioria dos seus visitantes usa computadores desktop. Isso pode indicar um público mais corporativo ou que acessa seu site durante o horário de trabalho. Considere otimizar o conteúdo para telas maiores e experiências mais completas.
+                        </p>
+                    </div>
+                    
+                    <div class="metrics-grid">
+                        <div class="small-card">
+                            <h4>Tempo (Mobile)</h4>
+                            <div class="value">0m 12s</div>
+                        </div>
+                        
+                        <div class="small-card">
+                            <h4>Tempo (Desktop)</h4>
+                            <div class="value">1m 47s</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção 3: Páginas Mais Visitadas -->
+        <div class="report-section">
+            <div class="section-header">
+                <div class="icon">📄</div>
+                <h2>Páginas Mais Visitadas</h2>
+            </div>
+            
+            <p>
+                Aqui estão as páginas que receberam mais visitas em seu site durante este mês:
+            </p>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Página</th>
+                        <th>Visualizações</th>
+                        <th>Tempo Médio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                <tr>
+                    <td><div class="rank">1</div></td>
+                    <td><strong>Estúdio E&B - Arquitetura e Interiores</strong><br><small>/</small></td>
+                    <td>35</td>
+                    <td>1m 50s</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">2</div></td>
+                    <td><strong>Clínica de Estética 072 - Estúdio E&B</strong><br><small>/projetos/clinica-de-estetica/</small></td>
+                    <td>9</td>
+                    <td>0m 19s</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">3</div></td>
+                    <td><strong>Estúdio E&B - Arquitetura e Interiores</strong><br><small>/blog/</small></td>
+                    <td>3</td>
+                    <td>0m 0s</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">4</div></td>
+                    <td><strong>Estúdio E&B - Arquitetura e Interiores</strong><br><small>/contato/</small></td>
+                    <td>3</td>
+                    <td>0m 12s</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">5</div></td>
+                    <td><strong>Escritório de Advocacia 047 - Estúdio...</strong><br><small>/projetos/escritorio-de-advocacia/</small></td>
+                    <td>3</td>
+                    <td>0m 25s</td>
+                </tr>
+                
+                </tbody>
+            </table>
+            
+            <!-- Destaque dos últimos 12 meses para página principal -->
+            <div class="year-highlight">
+                <h3>PÁGINA MAIS VISITADA NO ANO</h3>
+                <div class="counter">800</div>
+                <p>visualizações na página principal no último ano</p>
+            </div>
+        </div>
+        
+        <!-- Seção 4: Fontes de Tráfego -->
+        <div class="report-section">
+            <div class="section-header">
+                <div class="icon">🔍</div>
+                <h2>Fontes de Tráfego</h2>
+            </div>
+            
+            <p>
+                De onde vêm seus visitantes? Esta análise mostra as principais fontes de tráfego para seu site:
+            </p>
+            
+            <div class="chart-container" id="traffic-sources-chart">
+                <!-- Gráfico inserido via JavaScript -->
+            </div>
+            
+            <div class="explanation-box">
+                <div class="explanation-title">
+                    <span>💡</span> O que significam essas fontes?
+                </div>
+                <p>
+                    <strong>Orgânico:</strong> Visitantes que chegaram através de buscas no Google e outros buscadores.<br>
+                    <strong>Direto:</strong> Pessoas que digitaram seu endereço diretamente ou usaram favoritos.<br>
+                    <strong>Referência:</strong> Visitas vindas de links em outros sites.<br>
+                    <strong>Social:</strong> Tráfego vindo de redes sociais como Facebook, Instagram, etc.<br>
+                    <strong>Email:</strong> Visitantes que clicaram em links em emails enviados.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Seção 5: Desempenho no Google -->
+        <div class="report-section">
+            <div class="section-header">
+                <div class="icon">🔎</div>
+                <h2>Desempenho no Google</h2>
+            </div>
+            
+            <p>
+                Seu site apareceu <strong>8 vezes</strong> nos resultados de busca do Google este mês, 
+                gerando <strong>0 cliques</strong> para seu site. Vamos analisar este desempenho:
+            </p>
+            
+            <div class="chart-container" id="search-performance-chart">
+                <!-- Gráfico inserido via JavaScript -->
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="small-card">
+                    <h4>CTR Médio</h4>
+                    <div class="value">1,1%</div>
+                </div>
+                
+                <div class="small-card">
+                    <h4>Posição Média</h4>
+                    <div class="value">13,9</div>
+                    <div class="position-bar">
+                        <div class="fill" style="width: 74.17934857753252%;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px;">Palavras-chave Principais</h3>
+            <p>Estas são as consultas que trouxeram mais tráfego do Google para seu site:</p>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Palavra-chave</th>
+                        <th>Cliques</th>
+                        <th>Impressões</th>
+                        <th>Posição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                <tr>
+                    <td><div class="rank">1</div></td>
+                    <td><strong>arquiteto comercial</strong></td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>1,0</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">2</div></td>
+                    <td><strong>decorador de interiores</strong></td>
+                    <td>1</td>
+                    <td>3</td>
+                    <td>1,3</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">3</div></td>
+                    <td><strong>arkebe arquitetura</strong></td>
+                    <td>0</td>
+                    <td>1</td>
+                    <td>13,0</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">4</div></td>
+                    <td><strong>arquiteto</strong></td>
+                    <td>0</td>
+                    <td>2</td>
+                    <td>1,0</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">5</div></td>
+                    <td><strong>arquitetura e design de interiores</strong></td>
+                    <td>0</td>
+                    <td>1</td>
+                    <td>2,0</td>
+                </tr>
+                
+                </tbody>
+            </table>
+            
+            <h3 style="margin-top: 30px;">Páginas com Melhor Desempenho no Google</h3>
+            <p>Estas são as páginas do seu site com melhor desempenho nas buscas:</p>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Página</th>
+                        <th>Cliques</th>
+                        <th>Impressões</th>
+                        <th>CTR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                <tr>
+                    <td><div class="rank">1</div></td>
+                    <td><strong>/</strong></td>
+                    <td>7</td>
+                    <td>148</td>
+                    <td>4,7%</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">2</div></td>
+                    <td><strong>projetos/clinica-de-estetica/</strong></td>
+                    <td>2</td>
+                    <td>84</td>
+                    <td>2,4%</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">3</div></td>
+                    <td><strong>projetos/sala-comercial/</strong></td>
+                    <td>1</td>
+                    <td>348</td>
+                    <td>0,3%</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">4</div></td>
+                    <td><strong>blog/</strong></td>
+                    <td>0</td>
+                    <td>1</td>
+                    <td>0,0%</td>
+                </tr>
+                
+                <tr>
+                    <td><div class="rank">5</div></td>
+                    <td><strong>categoria-de-projeto/projetos-de-arqu...</strong></td>
+                    <td>0</td>
+                    <td>8</td>
+                    <td>0,0%</td>
+                </tr>
+                
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Seção 6: Resumo e Recomendações -->
+        <div class="report-section">
+            <div class="section-header">
+                <div class="icon">📝</div>
+                <h2>Resumo e Insights</h2>
+            </div>
+            
+            <div class="summary-box">
+                <h3>Resumo do Mês</h3>
+                <p>
+                    Houve uma redução significativa de 38.0% nas visitas em relação ao mês anterior. Houve redução de 7.2% nas impressões e 28.6% nos cliques vindos do Google. A principal fonte de visitas foi buscadores orgânicos, responsável por 24 sessões.
+                </p>
+            </div>
+            
+            <h3 style="margin-top: 25px;">Principais Insights</h3>
+            <ul style="margin: 15px 0; padding-left: 20px;">
+                <li>A taxa de rejeição está abaixo de 40%, o que é excelente! Os visitantes estão engajados com seu conteúdo.</li>
+<li>A taxa de cliques (CTR) de 1.1% está abaixo da média. Considere revisar os títulos e descrições das suas páginas para torná-los mais atrativos.</li>
+<li>Redução significativa de 38.0% nas visitas. Verifique se houve mudanças recentes no site ou em estratégias de marketing.</li>
+
+            </ul>
+        </div>
+        
+        <!-- Rodapé do relatório -->
+        <div class="report-footer">
+            <p>Relatório gerado em 24/04/2025 • Handel Prime • https://handelprime.com.br</p>
+        </div>
+    </div>
+    
+    <!-- O HTML acima é apenas um template. Na implementação real, 
+         os gráficos seriam injetados via JavaScript ou 
+         renderizados como imagens estáticas para o PDF -->
+</body>
+</html>

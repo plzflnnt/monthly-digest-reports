@@ -4,7 +4,6 @@ from datetime import datetime
 import io
 import base64
 from google.cloud import storage
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import jinja2
@@ -15,19 +14,19 @@ from plotly.subplots import make_subplots
 import plotly.io as pio
 from utils.data_processing import calculate_growth, format_number, format_percentage
 
+# Importar o módulo de geração de gráficos (deve ficar fora da classe)
+from modules.chart_generator import (
+    create_trend_chart,
+    create_devices_chart, 
+    create_traffic_sources_chart,
+    create_search_performance_chart,
+    get_empty_chart_image
+)
+
 class ModernReportGenerator:
-    # Adicione esta função no início da classe ModernReportGenerator
     def _prepare_time_series_data(self, data_list, date_field='date', value_fields=None):
         """
         Prepara dados de séries temporais para gráficos, tratando corretamente as datas.
-
-        Args:
-            data_list: Lista de dicionários contendo dados
-            date_field: Nome do campo que contém as datas
-            value_fields: Lista de campos de valores a serem extraídos
-
-        Returns:
-            DataFrame: DataFrame pandas com as datas e valores
         """
         import pandas as pd
 
@@ -64,13 +63,6 @@ class ModernReportGenerator:
     def __init__(self, client_config, template_path, month, year, language='pt-BR'):
         """
         Inicializa o gerador de relatórios moderno.
-        
-        Args:
-            client_config: Configuração do cliente
-            template_path: Caminho para o template HTML do relatório
-            month: Mês do relatório (1-12)
-            year: Ano do relatório
-            language: Idioma do relatório
         """
         self.client = client_config
         self.month = month
@@ -117,328 +109,6 @@ class ModernReportGenerator:
             'analytics': analytics_data,
             'search_console': search_console_data
         }
-    
-    def _create_trend_chart(self):
-        """Cria gráfico de tendência de visitas e usuários."""
-        import plotly.graph_objects as go
-        from plotly.subplots import make_subplots
-        import plotly.io as pio
-        import base64
-        import pandas as pd
-        import logging
-        
-        # Obter dados diários de visitas
-        analytics_data = self.report_data.get('analytics', {})
-        if 'daily_metrics' not in analytics_data or not analytics_data['daily_metrics']:
-            return None
-    
-        # Criar DataFrame
-        df = pd.DataFrame(analytics_data['daily_metrics'])
-        if 'date' not in df.columns:
-            return None
-        
-        # Converter para datetime - sem tentar alterar formato
-        try:
-            df['date'] = pd.to_datetime(df['date'])
-            df = df.sort_values('date')
-            
-            # Converter sessões e usuários para números
-            df['sessions'] = pd.to_numeric(df['sessions'])
-            df['users'] = pd.to_numeric(df['users'])
-            
-            # Criar gráfico
-            fig = make_subplots(specs=[[{"secondary_y": False}]])
-            
-            fig.add_trace(
-                go.Scatter(
-                    x=df['date'], 
-                    y=df['sessions'], 
-                    name="Visitas",
-                    line=dict(color='#935FA7', width=3),
-                    mode='lines'
-                )
-            )
-            
-            fig.add_trace(
-                go.Scatter(
-                    x=df['date'], 
-                    y=df['users'], 
-                    name="Usuários",
-                    line=dict(color='#F2C354', width=3, dash='dot'),
-                    mode='lines'
-                )
-            )
-            
-            fig.update_layout(
-                title=None,
-                xaxis_title=None,
-                yaxis_title="Número de Visitas/Usuários",
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1
-                ),
-                template="plotly_white",
-                height=300,
-                margin=dict(l=10, r=10, t=10, b=10)
-            )
-            
-            # Salvar como imagem
-            img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
-            img_base64 = base64.b64encode(img_bytes).decode('ascii')
-            
-            return f"data:image/png;base64,{img_base64}"
-            
-        except Exception as e:
-            logging.error(f"Erro ao criar gráfico de tendência: {str(e)}")
-            import traceback
-            logging.error(traceback.format_exc())
-            return None
-    
-    def _create_devices_chart(self):
-        """Cria gráfico de dispositivos."""
-        analytics_data = self.report_data.get('analytics', {})
-        if 'devices' not in analytics_data:
-            return None
-
-        devices = analytics_data['devices']
-
-        # Converter valores para inteiros (caso sejam strings)
-        devices_int = {k: int(v) if isinstance(v, str) else v for k, v in devices.items()}
-
-        # Preparar dados
-        labels = list(devices_int.keys())
-        values = list(devices_int.values())
-
-        # Criar gráfico de pizza com Plotly
-        fig = go.Figure(data=[go.Pie(
-            labels=labels,
-            values=values,
-            hole=.4,
-            textinfo='label+percent',
-            marker=dict(colors=['#935FA7', '#F2C354', '#111218'])
-        )])
-
-        fig.update_layout(
-            title=None,
-            legend=dict(
-                orientation="h", 
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            template="plotly_white",
-            height=250,
-            margin=dict(l=10, r=10, t=10, b=10)
-        )
-
-        # Salvar como imagem
-        img_bytes = pio.to_image(fig, format="png", width=400, height=250, scale=2)
-        img_base64 = base64.b64encode(img_bytes).decode('ascii')
-
-        return f"data:image/png;base64,{img_base64}"
-    
-    def _create_traffic_sources_chart(self):
-        """Cria gráfico de fontes de tráfego."""
-        analytics_data = self.report_data.get('analytics', {})
-        if 'traffic_sources' not in analytics_data:
-            return None
-
-        # Processa as fontes de tráfego
-        sources = {}
-        for source in analytics_data['traffic_sources']:
-            medium = source['medium']
-            # Simplifica as fontes para categorias mais amplas
-            if medium == 'organic':
-                category = 'Orgânico'
-            elif medium == 'referral':
-                category = 'Referência'
-            elif medium == 'social':
-                category = 'Social'
-            elif medium == 'email':
-                category = 'Email'
-            elif medium == '(none)' or medium == 'direct':
-                category = 'Direto'
-            else:
-                category = 'Outros'
-
-            # Garantir que o valor das sessões seja inteiro
-            session_value = int(source['sessions']) if isinstance(source['sessions'], str) else source['sessions']
-
-            if category in sources:
-                sources[category] += session_value
-            else:
-                sources[category] = session_value
-
-        # Preparar dados para o gráfico
-        df = pd.DataFrame({
-            'Fonte': list(sources.keys()),
-            'Sessões': list(sources.values())
-        })
-        df = df.sort_values('Sessões', ascending=False)
-
-        # Criar gráfico de barras com Plotly
-        fig = px.bar(
-            df, 
-            x='Fonte', 
-            y='Sessões',
-            color='Fonte',
-            color_discrete_map={
-                'Orgânico': '#935FA7',
-                'Direto': '#F2C354',
-                'Referência': '#FF6B6C',
-                'Social': '#A1E8CC',
-                'Email': '#111218',
-                'Outros': '#999999'
-            },
-            text='Sessões'
-        )
-
-        # Atualizar layout
-        fig.update_layout(
-            title=None,
-            xaxis_title=None,
-            yaxis_title="Número de Sessões",
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            template="plotly_white",
-            height=300,
-            margin=dict(l=10, r=10, t=10, b=10)
-        )
-
-        fig.update_traces(texttemplate='%{text}', textposition='outside')
-
-        # Salvar como imagem
-        img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
-        img_base64 = base64.b64encode(img_bytes).decode('ascii')
-
-        return f"data:image/png;base64,{img_base64}"
-    
-    def _create_search_performance_chart(self):
-        """Cria gráfico de desempenho nas buscas."""
-        import plotly.graph_objects as go
-        from plotly.subplots import make_subplots
-        import plotly.io as pio
-        import base64
-        import pandas as pd
-        import logging
-
-        search_console_data = self.report_data.get('search_console', {})
-        if 'performance_by_date' not in search_console_data or not search_console_data['performance_by_date']:
-            return None
-
-        # Criar DataFrame
-        df = pd.DataFrame(search_console_data['performance_by_date'])
-        if 'date' not in df.columns:
-            return None
-
-        # Converter para datetime - sem tentar alterar formato
-        try:
-            df['date'] = pd.to_datetime(df['date'])
-            df = df.sort_values('date')
-
-            # Criar gráfico
-            fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-            fig.add_trace(
-                go.Scatter(
-                    x=df['date'], 
-                    y=df['impressions'], 
-                    name="Impressões",
-                    line=dict(color='#935FA7', width=3),
-                    mode='lines'
-                ),
-                secondary_y=False
-            )
-
-            fig.add_trace(
-                go.Scatter(
-                    x=df['date'], 
-                    y=df['clicks'], 
-                    name="Cliques",
-                    line=dict(color='#F2C354', width=3),
-                    mode='lines'
-                ),
-                secondary_y=False
-            )
-
-            fig.add_trace(
-                go.Scatter(
-                    x=df['date'], 
-                    y=df['position'], 
-                    name="Posição Média",
-                    line=dict(color='#FF6B6C', width=2, dash='dash'),
-                    mode='lines'
-                ),
-                secondary_y=True
-            )
-
-            fig.update_yaxes(title_text="Impressões e Cliques", secondary_y=False)
-            fig.update_yaxes(title_text="Posição Média", secondary_y=True, autorange="reversed")
-
-            fig.update_layout(
-                title=None,
-                xaxis_title=None,
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1
-                ),
-                template="plotly_white",
-                height=300,
-                margin=dict(l=10, r=10, t=10, b=10)
-            )
-
-            # Salvar como imagem
-            img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
-            img_base64 = base64.b64encode(img_bytes).decode('ascii')
-
-            return f"data:image/png;base64,{img_base64}"
-
-        except Exception as e:
-            logging.error(f"Erro ao criar gráfico de desempenho nas buscas: {str(e)}")
-            import traceback
-            logging.error(traceback.format_exc())
-            return None
-        
-    def _get_empty_chart_image(self, message="Dados insuficientes para gerar o gráfico"):
-        """Cria uma imagem de fallback para gráficos ausentes."""
-        import matplotlib.pyplot as plt
-        import base64
-        import io
-
-        # Criar figura
-        fig, ax = plt.subplots(figsize=(10, 4))
-
-        # Remover eixos
-        ax.axis('off')
-
-        # Adicionar mensagem
-        ax.text(0.5, 0.5, message, ha='center', va='center', fontsize=14)
-
-        # Cor de fundo
-        fig.patch.set_facecolor('#f5f5f5')
-
-        # Salvar como imagem
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=100, facecolor='#f5f5f5')
-        buf.seek(0)
-        img_bytes = buf.getvalue()
-        plt.close(fig)
-
-        img_base64 = base64.b64encode(img_bytes).decode('ascii')
-
-        return f"data:image/png;base64,{img_base64}"
     
     def _generate_device_insight(self, devices):
         """Gera uma análise sobre o uso de dispositivos."""
@@ -848,12 +518,6 @@ class ModernReportGenerator:
         monthly_summary = self._generate_monthly_summary(analytics_data, search_console_data)
         insights_list = self._generate_insights(analytics_data, search_console_data)
         
-        # Gerar gráficos
-        trend_chart = self._create_trend_chart()
-        devices_chart = self._create_devices_chart()
-        traffic_sources_chart = self._create_traffic_sources_chart()
-        search_performance_chart = self._create_search_performance_chart()
-        
         # Data de geração do relatório
         generation_date = datetime.now().strftime("%d/%m/%Y")
         
@@ -902,25 +566,42 @@ class ModernReportGenerator:
             'generation_date': generation_date,
         }
         
-        # Adicionar gráficos ao template
-        trend_chart = self._create_trend_chart()
+        # Gerar gráficos usando o novo módulo simplificado
+        enable_debug = self.client.get('report_config', {}).get('enable_debug', False)
+        
+        # Gerar gráficos com fallback automático
+        trend_chart = create_trend_chart(
+            analytics_data.get('daily_metrics', []), 
+            save_debug=enable_debug
+        )
         if not trend_chart:
-            trend_chart = self._get_empty_chart_image("Dados insuficientes para gerar o gráfico de tendência")
-        template_data['trend_chart'] = f'<img src="{trend_chart}" alt="Gráfico de tendência de visitas e usuários" style="width:100%;height:auto;">'
-
-        devices_chart = self._create_devices_chart()
+            trend_chart = get_empty_chart_image("Dados insuficientes para gerar o gráfico de tendência")
+        
+        devices_chart = create_devices_chart(
+            analytics_data.get('devices', {}), 
+            save_debug=enable_debug
+        )
         if not devices_chart:
-            devices_chart = self._get_empty_chart_image("Dados insuficientes para gerar o gráfico de dispositivos")
-        template_data['devices_chart'] = f'<img src="{devices_chart}" alt="Distribuição de dispositivos" style="width:100%;height:auto;">'
-
-        traffic_sources_chart = self._create_traffic_sources_chart()
+            devices_chart = get_empty_chart_image("Dados insuficientes para gerar o gráfico de dispositivos")
+        
+        traffic_sources_chart = create_traffic_sources_chart(
+            analytics_data.get('traffic_sources', []), 
+            save_debug=enable_debug
+        )
         if not traffic_sources_chart:
-            traffic_sources_chart = self._get_empty_chart_image("Dados insuficientes para gerar o gráfico de fontes de tráfego")
-        template_data['traffic_sources_chart'] = f'<img src="{traffic_sources_chart}" alt="Fontes de tráfego" style="width:100%;height:auto;">'
-
-        search_performance_chart = self._create_search_performance_chart()
+            traffic_sources_chart = get_empty_chart_image("Dados insuficientes para gerar o gráfico de fontes de tráfego")
+        
+        search_performance_chart = create_search_performance_chart(
+            search_console_data.get('performance_by_date', []), 
+            save_debug=enable_debug
+        )
         if not search_performance_chart:
-            search_performance_chart = self._get_empty_chart_image("Dados insuficientes para gerar o gráfico de desempenho nas buscas")
+            search_performance_chart = get_empty_chart_image("Dados insuficientes para gerar o gráfico de desempenho nas buscas")
+        
+        # Adicionar gráficos ao template
+        template_data['trend_chart'] = f'<img src="{trend_chart}" alt="Gráfico de tendência de visitas e usuários" style="width:100%;height:auto;">'
+        template_data['devices_chart'] = f'<img src="{devices_chart}" alt="Distribuição de dispositivos" style="width:100%;height:auto;">'
+        template_data['traffic_sources_chart'] = f'<img src="{traffic_sources_chart}" alt="Fontes de tráfego" style="width:100%;height:auto;">'
         template_data['search_performance_chart'] = f'<img src="{search_performance_chart}" alt="Desempenho nas buscas" style="width:100%;height:auto;">'
         
         # Renderizar o template
@@ -970,9 +651,9 @@ class ModernReportGenerator:
         return pdf_buffer
     
     
+    @staticmethod
     def upload_report(pdf_buffer, client_id, year, month, bucket_name='monthly-digest-reports'):
-        """
-        Faz upload do relatório para o Cloud Storage.
+        """Faz upload do relatório para o Cloud Storage.
 
         Args:
             pdf_buffer: Buffer contendo o PDF do relatório

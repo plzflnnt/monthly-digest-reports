@@ -1,0 +1,44 @@
+[
+  {
+    "source": "google",
+    "medium": "organic",
+    "sessions": "24",
+    "conversions": "0"
+  },
+  {
+    "source": "(direct)",
+    "medium": "(none)",
+    "sessions": "12",
+    "conversions": "0"
+  },
+  {
+    "source": "facebook.com",
+    "medium": "referral",
+    "sessions": "8",
+    "conversions": "0"
+  },
+  {
+    "source": "prod.uhrs.playmsn.com",
+    "medium": "referral",
+    "sessions": "2",
+    "conversions": "0"
+  },
+  {
+    "source": "br.search.yahoo.com",
+    "medium": "referral",
+    "sessions": "1",
+    "conversions": "0"
+  },
+  {
+    "source": "chatgpt.com",
+    "medium": "referral",
+    "sessions": "1",
+    "conversions": "0"
+  },
+  {
+    "source": "l.instagram.com",
+    "medium": "referral",
+    "sessions": "1",
+    "conversions": "0"
+  }
+]

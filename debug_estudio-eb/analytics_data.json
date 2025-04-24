@@ -1,0 +1,341 @@
+{
+  "basic_metrics": {
+    "total_users": "44",
+    "sessions": "49",
+    "engaged_sessions": "24",
+    "engagement_rate": "0.48979591836734693",
+    "avg_session_duration": "86.492002102040829",
+    "pages_per_session": "1.4081632653061225",
+    "bounce_rate": "0.51020408163265307",
+    "conversions": "0",
+    "conversion_rate": "0.0"
+  },
+  "daily_metrics": [
+    {
+      "date": "2025-03-03",
+      "sessions": "2",
+      "users": "2",
+      "pageviews": "3",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-04",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-05",
+      "sessions": "2",
+      "users": "2",
+      "pageviews": "2",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-06",
+      "sessions": "4",
+      "users": "4",
+      "pageviews": "5",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-07",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-08",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-09",
+      "sessions": "2",
+      "users": "2",
+      "pageviews": "3",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-10",
+      "sessions": "3",
+      "users": "3",
+      "pageviews": "4",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-12",
+      "sessions": "3",
+      "users": "2",
+      "pageviews": "4",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-13",
+      "sessions": "2",
+      "users": "2",
+      "pageviews": "3",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-14",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-15",
+      "sessions": "2",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-17",
+      "sessions": "7",
+      "users": "6",
+      "pageviews": "7",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-18",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-19",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-21",
+      "sessions": "2",
+      "users": "2",
+      "pageviews": "2",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-23",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-24",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-25",
+      "sessions": "2",
+      "users": "2",
+      "pageviews": "2",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-27",
+      "sessions": "2",
+      "users": "2",
+      "pageviews": "8",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-28",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "2",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-29",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "5",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-30",
+      "sessions": "1",
+      "users": "1",
+      "pageviews": "1",
+      "conversions": "0"
+    },
+    {
+      "date": "2025-03-31",
+      "sessions": "5",
+      "users": "5",
+      "pageviews": "9",
+      "conversions": "0"
+    }
+  ],
+  "top_pages": [
+    {
+      "path": "/",
+      "title": "Est\u00fadio E&B - Arquitetura e Interiores",
+      "views": "35",
+      "time": "110.3822048125"
+    },
+    {
+      "path": "/projetos/clinica-de-estetica/",
+      "title": "Cl\u00ednica de Est\u00e9tica 072 - Est\u00fadio E&B",
+      "views": "9",
+      "time": "19.612115333333335"
+    },
+    {
+      "path": "/blog/",
+      "title": "Est\u00fadio E&B - Arquitetura e Interiores",
+      "views": "3",
+      "time": "0"
+    },
+    {
+      "path": "/contato/",
+      "title": "Est\u00fadio E&B - Arquitetura e Interiores",
+      "views": "3",
+      "time": "12.009852"
+    },
+    {
+      "path": "/projetos/escritorio-de-advocacia/",
+      "title": "Escrit\u00f3rio de Advocacia 047 - Est\u00fadio E&B",
+      "views": "3",
+      "time": "25.963047"
+    },
+    {
+      "path": "/projetos/sala-comercial/",
+      "title": "Sala Comercial 070 - Est\u00fadio E&B",
+      "views": "3",
+      "time": "11.72851475"
+    },
+    {
+      "path": "/tags-do-projeto/consultorio/",
+      "title": "Arquivo de Consult\u00f3rio - Est\u00fadio E&B",
+      "views": "2",
+      "time": "1.43911"
+    },
+    {
+      "path": "/categoria-de-projeto/projetos-de-arquitetura/",
+      "title": "Arquivo de Projetos de Arquitetura - Est\u00fadio E&B",
+      "views": "1",
+      "time": "6.380956"
+    },
+    {
+      "path": "/categoria-de-projeto/projetos-de-interiores/",
+      "title": "Arquivo de Projetos de Interiores - Est\u00fadio E&B",
+      "views": "1",
+      "time": "6.99358"
+    },
+    {
+      "path": "/categoria-de-projeto/turn-key/",
+      "title": "Arquivo de Turn Key - Est\u00fadio E&B",
+      "views": "1",
+      "time": "5.77739"
+    }
+  ],
+  "traffic_sources": [
+    {
+      "source": "google",
+      "medium": "organic",
+      "sessions": "24",
+      "conversions": "0"
+    },
+    {
+      "source": "(direct)",
+      "medium": "(none)",
+      "sessions": "12",
+      "conversions": "0"
+    },
+    {
+      "source": "facebook.com",
+      "medium": "referral",
+      "sessions": "8",
+      "conversions": "0"
+    },
+    {
+      "source": "prod.uhrs.playmsn.com",
+      "medium": "referral",
+      "sessions": "2",
+      "conversions": "0"
+    },
+    {
+      "source": "br.search.yahoo.com",
+      "medium": "referral",
+      "sessions": "1",
+      "conversions": "0"
+    },
+    {
+      "source": "chatgpt.com",
+      "medium": "referral",
+      "sessions": "1",
+      "conversions": "0"
+    },
+    {
+      "source": "l.instagram.com",
+      "medium": "referral",
+      "sessions": "1",
+      "conversions": "0"
+    }
+  ],
+  "devices": {
+    "desktop": "38",
+    "mobile": "12"
+  },
+  "devices_metrics": {
+    "desktop": {
+      "sessions": "38",
+      "pageviews": "51",
+      "avg_time": "107.51482",
+      "conversions": "0",
+      "pages_per_session": "1.3421052631578947"
+    },
+    "mobile": {
+      "sessions": "12",
+      "pageviews": "18",
+      "avg_time": "12.712078583333332",
+      "conversions": "0",
+      "pages_per_session": "1.5"
+    }
+  },
+  "year_metrics": {
+    "total_sessions": "928",
+    "total_users": "708",
+    "total_pageviews": "1345"
+  },
+  "top_pages_year": [
+    {
+      "path": "/",
+      "title": "Est\u00fadio E&B - Arquitetura e Interiores",
+      "views": "619"
+    },
+    {
+      "path": "/projetos/sala-comercial/",
+      "title": "Sala Comercial 070 - Est\u00fadio E&B",
+      "views": "115"
+    },
+    {
+      "path": "/sobre-nos/",
+      "title": "Est\u00fadio E&B - Arquitetura e Interiores",
+      "views": "96"
+    },
+    {
+      "path": "/projetos-de-interiores/",
+      "title": "Est\u00fadio E&B - Arquitetura e Interiores",
+      "views": "50"
+    },
+    {
+      "path": "/tags-do-projeto/fachada/",
+      "title": "Arquivo de fachada - Est\u00fadio E&B",
+      "views": "47"
+    }
+  ]
+}
