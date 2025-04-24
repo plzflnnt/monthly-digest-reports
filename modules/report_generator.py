@@ -16,6 +16,51 @@ import plotly.io as pio
 from utils.data_processing import calculate_growth, format_number, format_percentage
 
 class ModernReportGenerator:
+    # Adicione esta função no início da classe ModernReportGenerator
+    def _prepare_time_series_data(self, data_list, date_field='date', value_fields=None):
+        """
+        Prepara dados de séries temporais para gráficos, tratando corretamente as datas.
+
+        Args:
+            data_list: Lista de dicionários contendo dados
+            date_field: Nome do campo que contém as datas
+            value_fields: Lista de campos de valores a serem extraídos
+
+        Returns:
+            DataFrame: DataFrame pandas com as datas e valores
+        """
+        import pandas as pd
+
+        if not data_list or not value_fields:
+            return None
+
+        # Criar DataFrame
+        df = pd.DataFrame(data_list)
+
+        # Verificar se o campo de data existe
+        if date_field not in df.columns:
+            return None
+
+        # As datas já estão no formato YYYY-MM-DD, 
+        # então não precisamos fazer conversão de formato
+        # Apenas converter para datetime
+        try:
+            df[date_field] = pd.to_datetime(df[date_field])
+
+            # Ordenar por data
+            df = df.sort_values(date_field)
+
+            # Selecionar apenas as colunas necessárias
+            columns_to_keep = [date_field] + value_fields
+            df = df[columns_to_keep]
+
+            return df
+        except Exception as e:
+            import logging
+            logging.error(f"Erro ao preparar dados de série temporal: {str(e)}")
+            return None
+        
+
     def __init__(self, client_config, template_path, month, year, language='pt-BR'):
         """
         Inicializa o gerador de relatórios moderno.
@@ -75,101 +120,82 @@ class ModernReportGenerator:
     
     def _create_trend_chart(self):
         """Cria gráfico de tendência de visitas e usuários."""
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+        import plotly.io as pio
+        import base64
+        import pandas as pd
+        import logging
+        
         # Obter dados diários de visitas
         analytics_data = self.report_data.get('analytics', {})
-        if 'daily_metrics' not in analytics_data:
+        if 'daily_metrics' not in analytics_data or not analytics_data['daily_metrics']:
             return None
-
-        daily_data = analytics_data['daily_metrics']
-        if not daily_data:
-            return None
-
-        # Converter para DataFrame
-        df = pd.DataFrame(daily_data)
-
-        # Verificar se a coluna 'date' existe
+    
+        # Criar DataFrame
+        df = pd.DataFrame(analytics_data['daily_metrics'])
         if 'date' not in df.columns:
             return None
-
-        # Verificar e limpar strings de data inválidas
-        valid_data = []
-        for index, row in df.iterrows():
-            try:
-                date_str = row['date']
-                # Verificar formato da data
-                if isinstance(date_str, str):
-                    # Corrigir formatos inválidos
-                    if '--' in date_str:
-                        date_str = date_str.replace('--', '-')
-                    date_str = date_str.replace('-0-', '-')
-
-                    # Tentar converter para datetime para validar
-                    valid_date = pd.to_datetime(date_str)
-
-                    # Criar nova linha com data corrigida
-                    new_row = row.copy()
-                    new_row['date'] = valid_date
-                    valid_data.append(new_row)
-            except:
-                import logging
-                logging.warning(f"Data inválida encontrada: {row['date']}")
-
-        # Se não houver datas válidas, retornar None
-        if not valid_data:
-            return None
-
-        # Criar novo DataFrame com dados válidos
-        clean_df = pd.DataFrame(valid_data)
-        clean_df = clean_df.sort_values('date')
-
-        # Criar gráfico com Plotly
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-        # Adicionar linha de visitas
-        fig.add_trace(
-            go.Scatter(
-                x=clean_df['date'], 
-                y=clean_df['sessions'], 
-                name="Visitas",
-                line=dict(color='#935FA7', width=3),
-                mode='lines'
+        
+        # Converter para datetime - sem tentar alterar formato
+        try:
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.sort_values('date')
+            
+            # Converter sessões e usuários para números
+            df['sessions'] = pd.to_numeric(df['sessions'])
+            df['users'] = pd.to_numeric(df['users'])
+            
+            # Criar gráfico
+            fig = make_subplots(specs=[[{"secondary_y": False}]])
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=df['date'], 
+                    y=df['sessions'], 
+                    name="Visitas",
+                    line=dict(color='#935FA7', width=3),
+                    mode='lines'
+                )
             )
-        )
-
-        # Adicionar linha de usuários
-        fig.add_trace(
-            go.Scatter(
-                x=clean_df['date'], 
-                y=clean_df['users'], 
-                name="Usuários",
-                line=dict(color='#F2C354', width=3, dash='dot'),
-                mode='lines'
-            ),
-            secondary_y=False
-        )
-
-        # Atualizar layout
-        fig.update_layout(
-            title=None,
-            xaxis_title=None,
-            yaxis_title="Número de Visitas/Usuários",
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            template="plotly_white",
-            height=300,
-            margin=dict(l=10, r=10, t=10, b=10)
-        )
-
-        # Salvar como imagem
-        img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
-        img_base64 = base64.b64encode(img_bytes).decode('ascii')
-
-        return f"data:image/png;base64,{img_base64}"
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=df['date'], 
+                    y=df['users'], 
+                    name="Usuários",
+                    line=dict(color='#F2C354', width=3, dash='dot'),
+                    mode='lines'
+                )
+            )
+            
+            fig.update_layout(
+                title=None,
+                xaxis_title=None,
+                yaxis_title="Número de Visitas/Usuários",
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                ),
+                template="plotly_white",
+                height=300,
+                margin=dict(l=10, r=10, t=10, b=10)
+            )
+            
+            # Salvar como imagem
+            img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
+            img_base64 = base64.b64encode(img_bytes).decode('ascii')
+            
+            return f"data:image/png;base64,{img_base64}"
+            
+        except Exception as e:
+            logging.error(f"Erro ao criar gráfico de tendência: {str(e)}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return None
     
     def _create_devices_chart(self):
         """Cria gráfico de dispositivos."""
@@ -298,136 +324,118 @@ class ModernReportGenerator:
     
     def _create_search_performance_chart(self):
         """Cria gráfico de desempenho nas buscas."""
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+        import plotly.io as pio
+        import base64
+        import pandas as pd
+        import logging
+
         search_console_data = self.report_data.get('search_console', {})
-        if 'performance_by_date' not in search_console_data:
+        if 'performance_by_date' not in search_console_data or not search_console_data['performance_by_date']:
             return None
 
-        # Obter dados de desempenho diário
-        performance_data = search_console_data['performance_by_date']
-
-        # Verificar se há dados
-        if not performance_data:
-            return None
-
-        # Converter para DataFrame
-        df = pd.DataFrame(performance_data)
-
-        # Verificar se a coluna 'date' existe
+        # Criar DataFrame
+        df = pd.DataFrame(search_console_data['performance_by_date'])
         if 'date' not in df.columns:
             return None
 
-        # Verificar e limpar strings de data inválidas
-        valid_dates = []
-        for date_str in df['date']:
-            try:
-                # Verificar formato da data
-                if isinstance(date_str, str):
-                    # Remover caracteres extras ou corrigir formatos inválidos
-                    # Alguns formatos comuns de erro e suas correções
-                    if '--' in date_str:
-                        # Corrigir formatos como '2025--03-01'
-                        date_str = date_str.replace('--', '-')
+        # Converter para datetime - sem tentar alterar formato
+        try:
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.sort_values('date')
 
-                    # Verificar se há um padrão como -0- no meio da data
-                    date_str = date_str.replace('-0-', '-')
+            # Criar gráfico
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-                    # Garantir que a data esteja no formato YYYY-MM-DD
-                    parts = date_str.split('-')
-                    if len(parts) == 3:
-                        # Se for necessário, corrija os componentes da data
-                        year = parts[0]
-                        month = parts[1].zfill(2)  # Adiciona zero à esquerda se necessário
-                        day = parts[2].zfill(2)    # Adiciona zero à esquerda se necessário
+            fig.add_trace(
+                go.Scatter(
+                    x=df['date'], 
+                    y=df['impressions'], 
+                    name="Impressões",
+                    line=dict(color='#935FA7', width=3),
+                    mode='lines'
+                ),
+                secondary_y=False
+            )
 
-                        # Reconstruir a data
-                        date_str = f"{year}-{month}-{day}"
+            fig.add_trace(
+                go.Scatter(
+                    x=df['date'], 
+                    y=df['clicks'], 
+                    name="Cliques",
+                    line=dict(color='#F2C354', width=3),
+                    mode='lines'
+                ),
+                secondary_y=False
+            )
 
-                # Tentar converter para datetime para validar
-                pd.to_datetime(date_str)
-                valid_dates.append(date_str)
-            except:
-                # Em caso de erro, usar uma data padrão ou pular
-                logging.warning(f"Data inválida encontrada: {date_str}")
-                # Opcionalmente, adicionar uma data padrão para manter a consistência dos dados
-                # valid_dates.append("2025-01-01")  # Data padrão
+            fig.add_trace(
+                go.Scatter(
+                    x=df['date'], 
+                    y=df['position'], 
+                    name="Posição Média",
+                    line=dict(color='#FF6B6C', width=2, dash='dash'),
+                    mode='lines'
+                ),
+                secondary_y=True
+            )
 
-        # Se não houver datas válidas, retornar None
-        if not valid_dates:
+            fig.update_yaxes(title_text="Impressões e Cliques", secondary_y=False)
+            fig.update_yaxes(title_text="Posição Média", secondary_y=True, autorange="reversed")
+
+            fig.update_layout(
+                title=None,
+                xaxis_title=None,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                ),
+                template="plotly_white",
+                height=300,
+                margin=dict(l=10, r=10, t=10, b=10)
+            )
+
+            # Salvar como imagem
+            img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
+            img_base64 = base64.b64encode(img_bytes).decode('ascii')
+
+            return f"data:image/png;base64,{img_base64}"
+
+        except Exception as e:
+            logging.error(f"Erro ao criar gráfico de desempenho nas buscas: {str(e)}")
+            import traceback
+            logging.error(traceback.format_exc())
             return None
+        
+    def _get_empty_chart_image(self, message="Dados insuficientes para gerar o gráfico"):
+        """Cria uma imagem de fallback para gráficos ausentes."""
+        import matplotlib.pyplot as plt
+        import base64
+        import io
 
-        # Criar um novo DataFrame com datas válidas
-        new_df = pd.DataFrame({
-            'date': valid_dates,
-            'impressions': df['impressions'].values[:len(valid_dates)],
-            'clicks': df['clicks'].values[:len(valid_dates)],
-            'position': df['position'].values[:len(valid_dates)]
-        })
+        # Criar figura
+        fig, ax = plt.subplots(figsize=(10, 4))
 
-        # Converter para datetime agora que as datas estão limpas
-        new_df['date'] = pd.to_datetime(new_df['date'])
-        new_df = new_df.sort_values('date')
+        # Remover eixos
+        ax.axis('off')
 
-        # Criar gráfico com subplots
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        # Adicionar mensagem
+        ax.text(0.5, 0.5, message, ha='center', va='center', fontsize=14)
 
-        # Adicionar linha de impressões
-        fig.add_trace(
-            go.Scatter(
-                x=new_df['date'], 
-                y=new_df['impressions'], 
-                name="Impressões",
-                line=dict(color='#935FA7', width=3),
-                mode='lines'
-            ),
-            secondary_y=False
-        )
-
-        # Adicionar linha de cliques
-        fig.add_trace(
-            go.Scatter(
-                x=new_df['date'], 
-                y=new_df['clicks'], 
-                name="Cliques",
-                line=dict(color='#F2C354', width=3),
-                mode='lines'
-            ),
-            secondary_y=False
-        )
-
-        # Adicionar linha de posição média (eixo secundário, invertido)
-        fig.add_trace(
-            go.Scatter(
-                x=new_df['date'], 
-                y=new_df['position'], 
-                name="Posição Média",
-                line=dict(color='#FF6B6C', width=2, dash='dash'),
-                mode='lines'
-            ),
-            secondary_y=True
-        )
-
-        # Configurar eixos
-        fig.update_yaxes(title_text="Impressões e Cliques", secondary_y=False)
-        fig.update_yaxes(title_text="Posição Média", secondary_y=True, autorange="reversed")
-
-        # Atualizar layout
-        fig.update_layout(
-            title=None,
-            xaxis_title=None,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            template="plotly_white",
-            height=300,
-            margin=dict(l=10, r=10, t=10, b=10)
-        )
+        # Cor de fundo
+        fig.patch.set_facecolor('#f5f5f5')
 
         # Salvar como imagem
-        img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=100, facecolor='#f5f5f5')
+        buf.seek(0)
+        img_bytes = buf.getvalue()
+        plt.close(fig)
+
         img_base64 = base64.b64encode(img_bytes).decode('ascii')
 
         return f"data:image/png;base64,{img_base64}"
@@ -894,26 +902,26 @@ class ModernReportGenerator:
             'generation_date': generation_date,
         }
         
-        # Adicionar gráficos ao template se disponíveis
-        if trend_chart:
-            template_data['trend_chart'] = f'<img src="{trend_chart}" alt="Gráfico de tendência de visitas e usuários" style="width:100%;height:auto;">'
-        else:
-            template_data['trend_chart'] = '<div style="height:300px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">Dados insuficientes para gerar o gráfico</div>'
-            
-        if devices_chart:
-            template_data['devices_chart'] = f'<img src="{devices_chart}" alt="Distribuição de dispositivos" style="width:100%;height:auto;">'
-        else:
-            template_data['devices_chart'] = '<div style="height:250px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">Dados insuficientes para gerar o gráfico</div>'
-            
-        if traffic_sources_chart:
-            template_data['traffic_sources_chart'] = f'<img src="{traffic_sources_chart}" alt="Fontes de tráfego" style="width:100%;height:auto;">'
-        else:
-            template_data['traffic_sources_chart'] = '<div style="height:300px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">Dados insuficientes para gerar o gráfico</div>'
-            
-        if search_performance_chart:
-            template_data['search_performance_chart'] = f'<img src="{search_performance_chart}" alt="Desempenho nas buscas" style="width:100%;height:auto;">'
-        else:
-            template_data['search_performance_chart'] = '<div style="height:300px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">Dados insuficientes para gerar o gráfico</div>'
+        # Adicionar gráficos ao template
+        trend_chart = self._create_trend_chart()
+        if not trend_chart:
+            trend_chart = self._get_empty_chart_image("Dados insuficientes para gerar o gráfico de tendência")
+        template_data['trend_chart'] = f'<img src="{trend_chart}" alt="Gráfico de tendência de visitas e usuários" style="width:100%;height:auto;">'
+
+        devices_chart = self._create_devices_chart()
+        if not devices_chart:
+            devices_chart = self._get_empty_chart_image("Dados insuficientes para gerar o gráfico de dispositivos")
+        template_data['devices_chart'] = f'<img src="{devices_chart}" alt="Distribuição de dispositivos" style="width:100%;height:auto;">'
+
+        traffic_sources_chart = self._create_traffic_sources_chart()
+        if not traffic_sources_chart:
+            traffic_sources_chart = self._get_empty_chart_image("Dados insuficientes para gerar o gráfico de fontes de tráfego")
+        template_data['traffic_sources_chart'] = f'<img src="{traffic_sources_chart}" alt="Fontes de tráfego" style="width:100%;height:auto;">'
+
+        search_performance_chart = self._create_search_performance_chart()
+        if not search_performance_chart:
+            search_performance_chart = self._get_empty_chart_image("Dados insuficientes para gerar o gráfico de desempenho nas buscas")
+        template_data['search_performance_chart'] = f'<img src="{search_performance_chart}" alt="Desempenho nas buscas" style="width:100%;height:auto;">'
         
         # Renderizar o template
         html = self.template.render(**template_data)
@@ -965,47 +973,47 @@ class ModernReportGenerator:
     def upload_report(pdf_buffer, client_id, year, month, bucket_name='monthly-digest-reports'):
         """
         Faz upload do relatório para o Cloud Storage.
-        
+
         Args:
             pdf_buffer: Buffer contendo o PDF do relatório
             client_id: ID do cliente
             year: Ano do relatório
             month: Mês do relatório (1-12)
             bucket_name: Nome do bucket do Cloud Storage
-        
+
         Returns:
             str: URL do relatório no Cloud Storage
         """
         try:
             from google.cloud import storage
-            
+
             # Garantir que month seja um inteiro
             month_int = month
             if isinstance(month, str) and month.isdigit():
                 month_int = int(month)
             elif not isinstance(month, int):
                 month_int = datetime.now().month  # Usar mês atual como fallback
-                
+
             # Garantir que year seja um inteiro
             year_int = year
             if isinstance(year, str) and year.isdigit():
                 year_int = int(year)
             elif not isinstance(year, int):
                 year_int = datetime.now().year  # Usar ano atual como fallback
-            
+
             # client_id deve permanecer como string
             client_id_str = str(client_id)
-            
+
             client = storage.Client()
             bucket = client.bucket(bucket_name)
-            
+
             # Formatar o nome do arquivo
             filename = f"{client_id_str}/report_{year_int}_{month_int:02d}.pdf"
-            
+
             # Fazer upload do arquivo
             blob = bucket.blob(filename)
             blob.upload_from_file(pdf_buffer, content_type='application/pdf')
-            
+
             return f"gs://{bucket_name}/{filename}"
         except Exception as e:
             import logging

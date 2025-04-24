@@ -1,0 +1,510 @@
+{
+  "performance_by_date": [
+    {
+      "date": "2025-03-01",
+      "clicks": 15,
+      "impressions": 443,
+      "ctr": 0.033860045146726865,
+      "position": 13.26410835214447
+    },
+    {
+      "date": "2025-03-02",
+      "clicks": 15,
+      "impressions": 487,
+      "ctr": 0.030800821355236138,
+      "position": 17.248459958932237
+    },
+    {
+      "date": "2025-03-03",
+      "clicks": 14,
+      "impressions": 455,
+      "ctr": 0.03076923076923077,
+      "position": 12.92967032967033
+    },
+    {
+      "date": "2025-03-04",
+      "clicks": 12,
+      "impressions": 422,
+      "ctr": 0.02843601895734597,
+      "position": 12.907582938388625
+    },
+    {
+      "date": "2025-03-05",
+      "clicks": 9,
+      "impressions": 436,
+      "ctr": 0.020642201834862386,
+      "position": 12.995412844036696
+    },
+    {
+      "date": "2025-03-06",
+      "clicks": 7,
+      "impressions": 448,
+      "ctr": 0.015625,
+      "position": 13.953125
+    },
+    {
+      "date": "2025-03-07",
+      "clicks": 22,
+      "impressions": 445,
+      "ctr": 0.04943820224719101,
+      "position": 14.177528089887641
+    },
+    {
+      "date": "2025-03-08",
+      "clicks": 12,
+      "impressions": 448,
+      "ctr": 0.026785714285714284,
+      "position": 14.950892857142858
+    },
+    {
+      "date": "2025-03-09",
+      "clicks": 10,
+      "impressions": 405,
+      "ctr": 0.024691358024691357,
+      "position": 14.25432098765432
+    },
+    {
+      "date": "2025-03-10",
+      "clicks": 20,
+      "impressions": 538,
+      "ctr": 0.03717472118959108,
+      "position": 13.49442379182156
+    },
+    {
+      "date": "2025-03-11",
+      "clicks": 25,
+      "impressions": 564,
+      "ctr": 0.044326241134751775,
+      "position": 14.092198581560284
+    },
+    {
+      "date": "2025-03-12",
+      "clicks": 31,
+      "impressions": 519,
+      "ctr": 0.05973025048169557,
+      "position": 12.007707129094412
+    },
+    {
+      "date": "2025-03-13",
+      "clicks": 9,
+      "impressions": 532,
+      "ctr": 0.016917293233082706,
+      "position": 14.193609022556391
+    },
+    {
+      "date": "2025-03-14",
+      "clicks": 16,
+      "impressions": 587,
+      "ctr": 0.027257240204429302,
+      "position": 12.398637137989779
+    },
+    {
+      "date": "2025-03-15",
+      "clicks": 14,
+      "impressions": 552,
+      "ctr": 0.025362318840579712,
+      "position": 13.242753623188406
+    },
+    {
+      "date": "2025-03-16",
+      "clicks": 8,
+      "impressions": 437,
+      "ctr": 0.018306636155606407,
+      "position": 15.043478260869565
+    },
+    {
+      "date": "2025-03-17",
+      "clicks": 16,
+      "impressions": 548,
+      "ctr": 0.029197080291970802,
+      "position": 12.958029197080291
+    },
+    {
+      "date": "2025-03-18",
+      "clicks": 24,
+      "impressions": 622,
+      "ctr": 0.03858520900321544,
+      "position": 16.170418006430868
+    },
+    {
+      "date": "2025-03-19",
+      "clicks": 22,
+      "impressions": 583,
+      "ctr": 0.03773584905660377,
+      "position": 13.670668953687821
+    },
+    {
+      "date": "2025-03-20",
+      "clicks": 14,
+      "impressions": 578,
+      "ctr": 0.02422145328719723,
+      "position": 12.603806228373703
+    },
+    {
+      "date": "2025-03-21",
+      "clicks": 13,
+      "impressions": 496,
+      "ctr": 0.02620967741935484,
+      "position": 12.286290322580646
+    },
+    {
+      "date": "2025-03-22",
+      "clicks": 15,
+      "impressions": 532,
+      "ctr": 0.02819548872180451,
+      "position": 13.671052631578947
+    },
+    {
+      "date": "2025-03-23",
+      "clicks": 11,
+      "impressions": 460,
+      "ctr": 0.02391304347826087,
+      "position": 12.419565217391304
+    },
+    {
+      "date": "2025-03-24",
+      "clicks": 16,
+      "impressions": 567,
+      "ctr": 0.02821869488536155,
+      "position": 13.991181657848324
+    },
+    {
+      "date": "2025-03-25",
+      "clicks": 13,
+      "impressions": 721,
+      "ctr": 0.018030513176144243,
+      "position": 11.918169209431346
+    },
+    {
+      "date": "2025-03-26",
+      "clicks": 14,
+      "impressions": 566,
+      "ctr": 0.024734982332155476,
+      "position": 12.026501766784452
+    },
+    {
+      "date": "2025-03-27",
+      "clicks": 17,
+      "impressions": 540,
+      "ctr": 0.03148148148148148,
+      "position": 12.303703703703704
+    },
+    {
+      "date": "2025-03-28",
+      "clicks": 28,
+      "impressions": 694,
+      "ctr": 0.040345821325648415,
+      "position": 9.756484149855908
+    },
+    {
+      "date": "2025-03-29",
+      "clicks": 19,
+      "impressions": 546,
+      "ctr": 0.0347985347985348,
+      "position": 11.820512820512821
+    },
+    {
+      "date": "2025-03-30",
+      "clicks": 15,
+      "impressions": 478,
+      "ctr": 0.03138075313807531,
+      "position": 11.46234309623431
+    },
+    {
+      "date": "2025-03-31",
+      "clicks": 22,
+      "impressions": 582,
+      "ctr": 0.037800687285223365,
+      "position": 11.335051546391753
+    }
+  ],
+  "top_queries": [
+    {
+      "query": "crematorio pet",
+      "clicks": 27,
+      "impressions": 1426,
+      "ctr": 0.018934081346423562,
+      "position": 8.251051893408135
+    },
+    {
+      "query": "estrelinhas no ceu",
+      "clicks": 20,
+      "impressions": 50,
+      "ctr": 0.4,
+      "position": 1.48
+    },
+    {
+      "query": "estrelinhas do ceu",
+      "clicks": 19,
+      "impressions": 95,
+      "ctr": 0.2,
+      "position": 1.1157894736842104
+    },
+    {
+      "query": "estrelinha do ceu londrina",
+      "clicks": 16,
+      "impressions": 156,
+      "ctr": 0.10256410256410256,
+      "position": 1
+    },
+    {
+      "query": "estrelinhas no c\u00e9u cremat\u00f3rio pet",
+      "clicks": 15,
+      "impressions": 181,
+      "ctr": 0.08287292817679558,
+      "position": 1.2044198895027625
+    },
+    {
+      "query": "cremat\u00f3rio pet londrina",
+      "clicks": 13,
+      "impressions": 134,
+      "ctr": 0.09701492537313433,
+      "position": 1.2164179104477613
+    },
+    {
+      "query": "estrelinha do ceu",
+      "clicks": 10,
+      "impressions": 215,
+      "ctr": 0.046511627906976744,
+      "position": 5.269767441860465
+    },
+    {
+      "query": "estrelinha no ceu",
+      "clicks": 9,
+      "impressions": 82,
+      "ctr": 0.10975609756097561,
+      "position": 2.9878048780487805
+    },
+    {
+      "query": "estrelinhas no c\u00e9u cremat\u00f3rio pet londrina",
+      "clicks": 9,
+      "impressions": 82,
+      "ctr": 0.10975609756097561,
+      "position": 1.1097560975609757
+    },
+    {
+      "query": "cremat\u00f3rio estrelinha do c\u00e9u",
+      "clicks": 7,
+      "impressions": 31,
+      "ctr": 0.22580645161290322,
+      "position": 1.3548387096774195
+    },
+    {
+      "query": "estrelinhas do ceu londrina",
+      "clicks": 7,
+      "impressions": 66,
+      "ctr": 0.10606060606060606,
+      "position": 1.2272727272727273
+    },
+    {
+      "query": "cremat\u00f3rio pet foz do igua\u00e7u",
+      "clicks": 6,
+      "impressions": 57,
+      "ctr": 0.10526315789473684,
+      "position": 6.912280701754386
+    },
+    {
+      "query": "cremacao cachorro",
+      "clicks": 5,
+      "impressions": 367,
+      "ctr": 0.013623978201634877,
+      "position": 10.122615803814714
+    },
+    {
+      "query": "estrelinhas no ceu maringa",
+      "clicks": 5,
+      "impressions": 32,
+      "ctr": 0.15625,
+      "position": 1.03125
+    },
+    {
+      "query": "estrelinhas no c\u00e9u",
+      "clicks": 5,
+      "impressions": 21,
+      "ctr": 0.23809523809523808,
+      "position": 1.1428571428571428
+    },
+    {
+      "query": "cremat\u00f3rio pet",
+      "clicks": 4,
+      "impressions": 602,
+      "ctr": 0.006644518272425249,
+      "position": 7.53156146179402
+    },
+    {
+      "query": "estrelinha do ceu arapongas",
+      "clicks": 4,
+      "impressions": 28,
+      "ctr": 0.14285714285714285,
+      "position": 1.8571428571428572
+    },
+    {
+      "query": "crematorio estrelinhas do ceu",
+      "clicks": 3,
+      "impressions": 25,
+      "ctr": 0.12,
+      "position": 1.72
+    },
+    {
+      "query": "cremacao pet",
+      "clicks": 2,
+      "impressions": 155,
+      "ctr": 0.012903225806451613,
+      "position": 16.60645161290323
+    },
+    {
+      "query": "crematorio de animais",
+      "clicks": 2,
+      "impressions": 500,
+      "ctr": 0.004,
+      "position": 12.206
+    }
+  ],
+  "top_pages": [
+    {
+      "page": "https://estrelinhasnoceu.com.br/",
+      "clicks": 410,
+      "impressions": 14563,
+      "ctr": 0.028153539792625144,
+      "position": 12.750188834718122
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/planos/",
+      "clicks": 18,
+      "impressions": 5429,
+      "ctr": 0.0033155277214956713,
+      "position": 8.4428071468042
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/unidades-e-conveniadas/",
+      "clicks": 16,
+      "impressions": 5324,
+      "ctr": 0.003005259203606311,
+      "position": 9.101239669421487
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/unidades-e-conveniad/arapongas/",
+      "clicks": 15,
+      "impressions": 240,
+      "ctr": 0.0625,
+      "position": 2.6708333333333334
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/pronto-atendimento-24h/",
+      "clicks": 12,
+      "impressions": 5199,
+      "ctr": 0.002308136180034622,
+      "position": 7.848432390844393
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/planos-preventivos/servico-exclusivo/",
+      "clicks": 9,
+      "impressions": 1095,
+      "ctr": 0.00821917808219178,
+      "position": 6.898630136986301
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/wp-content/uploads/2024/02/contrato-planos.pdf",
+      "clicks": 7,
+      "impressions": 34,
+      "ctr": 0.20588235294117646,
+      "position": 11.029411764705882
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/wp-content/uploads/2023/09/CONTRATO-EXCLUSIVO.pdf",
+      "clicks": 5,
+      "impressions": 51,
+      "ctr": 0.09803921568627451,
+      "position": 19.41176470588235
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/wp-content/uploads/2024/02/contrato-life.pdf",
+      "clicks": 4,
+      "impressions": 30,
+      "ctr": 0.13333333333333333,
+      "position": 5.7
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/2017/02/13/clientes-perguntam-e-a-biologa-camila-responde/",
+      "clicks": 3,
+      "impressions": 159,
+      "ctr": 0.018867924528301886,
+      "position": 10.79245283018868
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/planos-preventivos/sem-resgate-de-cinzas/",
+      "clicks": 3,
+      "impressions": 850,
+      "ctr": 0.0035294117647058825,
+      "position": 6.292941176470588
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/2018/07/30/dicas-nutricionais-para-aves-por-bios-fera-clinica-veterinaria/",
+      "clicks": 2,
+      "impressions": 51,
+      "ctr": 0.0392156862745098,
+      "position": 22.705882352941178
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/2017/04/18/cuidar-de-um-coelho-nao-e-tao-simples-como-parece/",
+      "clicks": 1,
+      "impressions": 17,
+      "ctr": 0.058823529411764705,
+      "position": 39.1764705882353
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/2017/04/18/o-que-significa-cada-movimento-do-rabo-do-cao/",
+      "clicks": 1,
+      "impressions": 372,
+      "ctr": 0.002688172043010753,
+      "position": 14.49731182795699
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/central-de-ajuda/",
+      "clicks": 1,
+      "impressions": 3707,
+      "ctr": 0.0002697599136768276,
+      "position": 8.831669813865659
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/guia/",
+      "clicks": 1,
+      "impressions": 3520,
+      "ctr": 0.0002840909090909091,
+      "position": 9.664204545454545
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/planos-preventivos/com-resgate-de-cinzas/",
+      "clicks": 1,
+      "impressions": 60,
+      "ctr": 0.016666666666666666,
+      "position": 11.666666666666666
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/planos-preventivos/plano-personalizado/",
+      "clicks": 1,
+      "impressions": 439,
+      "ctr": 0.002277904328018223,
+      "position": 8.400911161731207
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/2017/01/01/dicas-para-evitar-buracos-no-jardim/",
+      "clicks": 0,
+      "impressions": 4,
+      "ctr": 0,
+      "position": 24.5
+    },
+    {
+      "page": "https://estrelinhasnoceu.com.br/2017/05/16/a-morte-de-um-animal-de-estimacao-doi-igual-a-de-um-familiar/",
+      "clicks": 0,
+      "impressions": 23,
+      "ctr": 0,
+      "position": 11.434782608695652
+    }
+  ],
+  "indexing_issues": [],
+  "total_clicks": 498,
+  "total_impressions": 16231,
+  "avg_ctr": 0.03048298592070218,
+  "avg_position": 13.211215722994316
+}
