@@ -2,7 +2,6 @@ import json
 import os
 from datetime import datetime
 import io
-import base64
 from google.cloud import storage
 import pandas as pd
 import numpy as np
@@ -91,6 +90,9 @@ class ModernReportGenerator:
         
         # Dados anuais para destaque
         self.annual_data = None
+
+        # Adicionar um dicionário para armazenar os buffers de imagens
+        self.chart_buffers = {}
     
     def add_data(self, source, data):
         """Adiciona dados ao relatório."""
@@ -566,47 +568,58 @@ class ModernReportGenerator:
             'generation_date': generation_date,
         }
         
-        # Gerar gráficos usando o novo módulo simplificado
-        enable_debug = self.client.get('report_config', {}).get('enable_debug', False)
-        
         # Gerar gráficos com fallback automático
-        trend_chart = create_trend_chart(
+        enable_debug = self.client.get('report_config', {}).get('enable_debug', False)
+
+        # Trend chart
+        trend_buffer = create_trend_chart(
             analytics_data.get('daily_metrics', []), 
             save_debug=enable_debug
         )
-        if not trend_chart:
-            trend_chart = get_empty_chart_image("Dados insuficientes para gerar o gráfico de tendência")
-        
-        devices_chart = create_devices_chart(
+        if not trend_buffer:
+            trend_buffer = get_empty_chart_image("Dados insuficientes para gerar o gráfico de tendência")
+        self.chart_buffers['trend'] = trend_buffer
+
+        # Devices chart
+        devices_buffer = create_devices_chart(
             analytics_data.get('devices', {}), 
             save_debug=enable_debug
         )
-        if not devices_chart:
-            devices_chart = get_empty_chart_image("Dados insuficientes para gerar o gráfico de dispositivos")
-        
-        traffic_sources_chart = create_traffic_sources_chart(
+        if not devices_buffer:
+            devices_buffer = get_empty_chart_image("Dados insuficientes para gerar o gráfico de dispositivos")
+        self.chart_buffers['devices'] = devices_buffer
+
+        # Traffic sources chart
+        traffic_buffer = create_traffic_sources_chart(
             analytics_data.get('traffic_sources', []), 
             save_debug=enable_debug
         )
-        if not traffic_sources_chart:
-            traffic_sources_chart = get_empty_chart_image("Dados insuficientes para gerar o gráfico de fontes de tráfego")
-        
-        search_performance_chart = create_search_performance_chart(
+        if not traffic_buffer:
+            traffic_buffer = get_empty_chart_image("Dados insuficientes para gerar o gráfico de fontes de tráfego")
+        self.chart_buffers['traffic'] = traffic_buffer
+
+        # Search performance chart
+        search_buffer = create_search_performance_chart(
             search_console_data.get('performance_by_date', []), 
             save_debug=enable_debug
         )
-        if not search_performance_chart:
-            search_performance_chart = get_empty_chart_image("Dados insuficientes para gerar o gráfico de desempenho nas buscas")
-        
-        # Adicionar gráficos ao template
-        template_data['trend_chart'] = f'<img src="{trend_chart}" alt="Gráfico de tendência de visitas e usuários" style="width:100%;height:auto;">'
-        template_data['devices_chart'] = f'<img src="{devices_chart}" alt="Distribuição de dispositivos" style="width:100%;height:auto;">'
-        template_data['traffic_sources_chart'] = f'<img src="{traffic_sources_chart}" alt="Fontes de tráfego" style="width:100%;height:auto;">'
-        template_data['search_performance_chart'] = f'<img src="{search_performance_chart}" alt="Desempenho nas buscas" style="width:100%;height:auto;">'
-        
+        if not search_buffer:
+            search_buffer = get_empty_chart_image("Dados insuficientes para gerar o gráfico de desempenho nas buscas")
+        self.chart_buffers['search'] = search_buffer
+
+        # Adicionar gráficos ao template - usar CIDs para referência em e-mail
+        template_data['trend_chart'] = '<img src="cid:chart_trend" alt="Gráfico de tendência de visitas e usuários" style="width:100%;height:auto;">'
+        template_data['devices_chart'] = '<img src="cid:chart_devices" alt="Distribuição de dispositivos" style="width:100%;height:auto;">'
+        template_data['traffic_sources_chart'] = '<img src="cid:chart_traffic" alt="Fontes de tráfego" style="width:100%;height:auto;">'
+        template_data['search_performance_chart'] = '<img src="cid:chart_search" alt="Desempenho nas buscas" style="width:100%;height:auto;">'
+
         # Renderizar o template
         html = self.template.render(**template_data)
         return html
+    
+    def get_chart_buffers(self):
+        """Retorna os buffers de imagens dos gráficos."""
+        return self.chart_buffers
     
     def generate_pdf(self):
         """Gera o relatório em PDF."""

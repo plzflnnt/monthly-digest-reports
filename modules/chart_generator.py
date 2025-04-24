@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import io
-import base64
 import json
 import logging
 import traceback
@@ -11,6 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
 import plotly.io as pio
+from PIL import Image, ImageDraw
 
 # Desativar logging detalhado (descomentar para ativar)
 # logging.basicConfig(level=logging.INFO)
@@ -26,7 +26,7 @@ def create_trend_chart(daily_metrics, save_debug=False):
         save_debug: Se True, salva arquivos intermediários para debug
     
     Returns:
-        str: URL da imagem em formato base64 ou None em caso de erro
+        BytesIO: Buffer contendo a imagem do gráfico ou None em caso de erro
     """
     logger.info("Gerando gráfico de tendência de visitas e usuários...")
     
@@ -123,17 +123,16 @@ def create_trend_chart(daily_metrics, save_debug=False):
         if save_debug:
             fig.write_html("debug_trend_chart.html")
         
-        # Converter para imagem
-        img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
+        img_buffer = io.BytesIO()
+        pio.write_image(fig, img_buffer, format="png", width=1000, height=300, scale=2)
+        img_buffer.seek(0)  # Resetar o ponteiro do buffer para o início
         
-        # Salvar PNG para debug se solicitado
+        # Salvar para debug, se necessário
         if save_debug:
             with open("debug_trend_chart.png", "wb") as f:
-                f.write(img_bytes)
+                f.write(img_buffer.getvalue())
         
-        # Converter para base64
-        img_base64 = base64.b64encode(img_bytes).decode('ascii')
-        return f"data:image/png;base64,{img_base64}"
+        return img_buffer
         
     except Exception as e:
         logger.error(f"Erro ao gerar gráfico de tendência: {str(e)}")
@@ -149,7 +148,7 @@ def create_devices_chart(devices_data, save_debug=False):
         save_debug: Se True, salva arquivos intermediários para debug
     
     Returns:
-        str: URL da imagem em formato base64 ou None em caso de erro
+        str: BytesIO: Buffer contendo a imagem do gráfico ou None em caso de erro
     """
     logger.info("Gerando gráfico de dispositivos...")
     
@@ -198,20 +197,19 @@ def create_devices_chart(devices_data, save_debug=False):
         if save_debug:
             fig.write_html("debug_devices_chart.html")
         
-        # Converter para imagem
-        img_bytes = pio.to_image(fig, format="png", width=400, height=250, scale=2)
+        img_buffer = io.BytesIO()
+        pio.write_image(fig, img_buffer, format="png", width=1000, height=300, scale=2)
+        img_buffer.seek(0)  # Resetar o ponteiro do buffer para o início
         
-        # Salvar PNG para debug se solicitado
+        # Salvar para debug, se necessário
         if save_debug:
-            with open("debug_devices_chart.png", "wb") as f:
-                f.write(img_bytes)
+            with open("debug_trend_chart.png", "wb") as f:
+                f.write(img_buffer.getvalue())
         
-        # Converter para base64
-        img_base64 = base64.b64encode(img_bytes).decode('ascii')
-        return f"data:image/png;base64,{img_base64}"
+        return img_buffer
         
     except Exception as e:
-        logger.error(f"Erro ao gerar gráfico de dispositivos: {str(e)}")
+        logger.error(f"Erro ao gerar gráfico de tendência: {str(e)}")
         logger.error(traceback.format_exc())
         return None
 
@@ -224,7 +222,7 @@ def create_traffic_sources_chart(traffic_sources, save_debug=False):
         save_debug: Se True, salva arquivos intermediários para debug
     
     Returns:
-        str: URL da imagem em formato base64 ou None em caso de erro
+        str: BytesIO: Buffer contendo a imagem do gráfico ou None em caso de erro
     """
     logger.info("Gerando gráfico de fontes de tráfego...")
     
@@ -322,19 +320,19 @@ def create_traffic_sources_chart(traffic_sources, save_debug=False):
             fig.write_html("debug_traffic_sources_chart.html")
         
         # Converter para imagem
-        img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
+        img_buffer = io.BytesIO()
+        pio.write_image(fig, img_buffer, format="png", width=1000, height=300, scale=2)
+        img_buffer.seek(0)  # Resetar o ponteiro do buffer para o início
         
-        # Salvar PNG para debug se solicitado
+        # Salvar para debug, se necessário
         if save_debug:
-            with open("debug_traffic_sources_chart.png", "wb") as f:
-                f.write(img_bytes)
+            with open("debug_trend_chart.png", "wb") as f:
+                f.write(img_buffer.getvalue())
         
-        # Converter para base64
-        img_base64 = base64.b64encode(img_bytes).decode('ascii')
-        return f"data:image/png;base64,{img_base64}"
+        return img_buffer
         
     except Exception as e:
-        logger.error(f"Erro ao gerar gráfico de fontes de tráfego: {str(e)}")
+        logger.error(f"Erro ao gerar gráfico de tendência: {str(e)}")
         logger.error(traceback.format_exc())
         return None
 
@@ -347,7 +345,7 @@ def create_search_performance_chart(performance_data, save_debug=False):
         save_debug: Se True, salva arquivos intermediários para debug
     
     Returns:
-        str: URL da imagem em formato base64 ou None em caso de erro
+        str: BytesIO: Buffer contendo a imagem do gráfico ou None em caso de erro
     """
     logger.info("Gerando gráfico de desempenho nas buscas...")
     
@@ -473,19 +471,19 @@ def create_search_performance_chart(performance_data, save_debug=False):
             fig.write_html("debug_search_performance_chart.html")
         
         # Converter para imagem
-        img_bytes = pio.to_image(fig, format="png", width=1000, height=300, scale=2)
+        img_buffer = io.BytesIO()
+        pio.write_image(fig, img_buffer, format="png", width=1000, height=300, scale=2)
+        img_buffer.seek(0)  # Resetar o ponteiro do buffer para o início
         
-        # Salvar PNG para debug se solicitado
+        # Salvar para debug, se necessário
         if save_debug:
-            with open("debug_search_performance_chart.png", "wb") as f:
-                f.write(img_bytes)
+            with open("debug_trend_chart.png", "wb") as f:
+                f.write(img_buffer.getvalue())
         
-        # Converter para base64
-        img_base64 = base64.b64encode(img_bytes).decode('ascii')
-        return f"data:image/png;base64,{img_base64}"
+        return img_buffer
         
     except Exception as e:
-        logger.error(f"Erro ao gerar gráfico de desempenho nas buscas: {str(e)}")
+        logger.error(f"Erro ao gerar gráfico de tendência: {str(e)}")
         logger.error(traceback.format_exc())
         return None
 
@@ -499,7 +497,7 @@ def get_empty_chart_image(message="Dados insuficientes para gerar o gráfico", w
         height: Altura da imagem
     
     Returns:
-        str: URL da imagem em formato base64
+        BytesIO: Buffer contendo a imagem de fallback
     """
     try:
         # Criar figura em branco
@@ -532,15 +530,27 @@ def get_empty_chart_image(message="Dados insuficientes para gerar o gráfico", w
         fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
         
         # Converter para imagem
-        img_bytes = pio.to_image(fig, format="png", scale=2)
+        img_buffer = io.BytesIO()
+        pio.write_image(fig, img_buffer, format="png", scale=2)
+        img_buffer.seek(0)
         
-        # Converter para base64
-        img_base64 = base64.b64encode(img_bytes).decode('ascii')
-        return f"data:image/png;base64,{img_base64}"
+        return img_buffer
         
     except Exception as e:
         logger.error(f"Erro ao gerar imagem de fallback: {str(e)}")
         logger.error(traceback.format_exc())
         
-        # Gerar imagem em branco como último recurso
-        return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+        # Criar uma imagem mínima em caso de erro completo
+        from PIL import Image, ImageDraw
+        
+        # Criar imagem branca
+        fallback = Image.new('RGB', (400, 200), color='white')
+        draw = ImageDraw.Draw(fallback)
+        draw.text((10, 100), "Não foi possível gerar o gráfico", fill='black')
+        
+        # Salvar em buffer
+        buffer = io.BytesIO()
+        fallback.save(buffer, 'PNG')
+        buffer.seek(0)
+        
+        return buffer

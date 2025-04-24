@@ -451,7 +451,7 @@
             
             <!-- Gráfico de tendência visitas/usuários -->
             <div class="chart-container" id="trend-chart">
-                <!-- Gráfico inserido via JavaScript -->
+                {{trend_chart}}
             </div>
             
             <div class="metrics-grid">
@@ -499,7 +499,7 @@
             <div class="chart-row">
                 <div class="chart-col">
                     <div class="chart-container small-chart" id="devices-chart">
-                        <!-- Gráfico inserido via JavaScript -->
+                        {{devices_chart}}
                     </div>
                 </div>
                 <div class="chart-col">
@@ -570,7 +570,7 @@
             </p>
             
             <div class="chart-container" id="traffic-sources-chart">
-                <!-- Gráfico inserido via JavaScript -->
+                {{traffic_sources_chart}}
             </div>
             
             <div class="explanation-box">
@@ -600,7 +600,7 @@
             </p>
             
             <div class="chart-container" id="search-performance-chart">
-                <!-- Gráfico inserido via JavaScript -->
+                {{search_performance_chart}}
             </div>
             
             <div class="metrics-grid">
@@ -680,9 +680,5 @@
             <p>Relatório gerado em {{generation_date}} • Handel Prime • https://handelprime.com.br</p>
         </div>
     </div>
-    
-    <!-- O HTML acima é apenas um template. Na implementação real, 
-         os gráficos seriam injetados via JavaScript ou 
-         renderizados como imagens estáticas para o PDF -->
 </body>
 </html>

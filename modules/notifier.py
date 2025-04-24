@@ -5,7 +5,7 @@ from mailjet_rest import Client
 import json
 from utils.secrets_utils import get_mailjet_credentials
 
-def send_email(to, subject, message_html, pdf_buffer, report_html=None, sender=None):
+def send_email(to, subject, message_html, chart_buffers=None, pdf_buffer=None, report_html=None, sender=None):
     """
     Envia um e-mail com o relatório em anexo usando o Mailjet.
     
@@ -13,7 +13,8 @@ def send_email(to, subject, message_html, pdf_buffer, report_html=None, sender=N
         to: Endereço de e-mail do destinatário
         subject: Assunto do e-mail
         message_html: Corpo do e-mail em HTML
-        pdf_buffer: Buffer com o conteúdo do PDF
+        chart_buffers: Dicionário com buffers de imagens dos gráficos
+        pdf_buffer: Buffer com o conteúdo do PDF (opcional por enquanto)
         report_html: Conteúdo HTML do relatório (opcional)
         sender: Configuração do remetente (opcional, usa o padrão do secret se não fornecido)
     """
@@ -32,14 +33,39 @@ def send_email(to, subject, message_html, pdf_buffer, report_html=None, sender=N
             sender_email = sender
             sender_name = "Relatórios Mensais"
         
-        # Preparar anexo (codificar PDF em base64)
-        pdf_buffer.seek(0)  # Garantir que o cursor está no início do buffer
-        pdf_content = pdf_buffer.read()
-        pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
-        
         # Se o HTML do relatório estiver disponível, usá-lo como corpo do e-mail
         # Se não, usar o message_html original
         email_body = report_html if report_html else message_html
+        
+        # Preparar anexos
+        attachments = []
+        inlined_attachments = []
+        # (codificar PDF em base64) PDF removido portemporariamente
+        #pdf_buffer.seek(0)  # Garantir que o cursor está no início do buffer
+        #pdf_content = pdf_buffer.read()
+        #pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+        
+        # Adicionar gráficos como anexos inline
+        if chart_buffers:
+            for chart_name, buffer in chart_buffers.items():
+                if buffer:
+                    # Resetar buffer para o início
+                    buffer.seek(0)
+                    chart_content = buffer.read()
+                    chart_base64 = base64.b64encode(chart_content).decode('utf-8')
+                    
+                    # Criar anexo inline
+                    inline_attachment = {
+                        'ContentType': 'image/png',
+                        'Filename': f'{chart_name}.png',
+                        'ContentID': f'chart_{chart_name}',
+                        'Base64Content': chart_base64
+                    }
+                    
+                    inlined_attachments.append(inline_attachment)
+        
+        # Temporariamente removemos o PDF como anexo, conforme solicitado
+        # [Código do PDF comentado]
         
         # Construir payload da mensagem
         data = {
@@ -57,16 +83,20 @@ def send_email(to, subject, message_html, pdf_buffer, report_html=None, sender=N
                     ],
                     'Subject': subject,
                     'HTMLPart': email_body,
-                    'Attachments': [
-                        {
-                            'ContentType': 'application/pdf',
-                            'Filename': 'relatorio_mensal.pdf',
-                            'Base64Content': pdf_base64
-                        }
-                    ]
+                    'InlinedAttachments': inlined_attachments
                 }
             ]
         }
+
+        # Temporariamente removemos o PDF como anexo
+
+        #'Attachments': [
+        #                {
+        #                    'ContentType': 'application/pdf',
+        #                    'Filename': 'relatorio_mensal.pdf',
+        #                    'Base64Content': pdf_base64
+        #                }
+        #            ]
         
         # Enviar e-mail
         result = mailjet.send.create(data=data)
@@ -83,7 +113,7 @@ def send_email(to, subject, message_html, pdf_buffer, report_html=None, sender=N
         logging.error(f"Erro ao enviar e-mail: {str(e)}")
         return False, f"Erro ao enviar e-mail: {str(e)}"
 
-def notify_client(client, report_url, month, year, pdf_buffer, report_html=None):
+def notify_client(client, report_url, month, year, pdf_buffer, report_html=None, chart_buffers=None):
     """
     Notifica o cliente sobre o relatório.
     
@@ -94,6 +124,7 @@ def notify_client(client, report_url, month, year, pdf_buffer, report_html=None)
         year: Ano do relatório
         pdf_buffer: Buffer com o conteúdo do PDF
         report_html: Conteúdo HTML do relatório (opcional)
+        chart_buffers: Dicionário com buffers de imagens dos gráficos
     """
     # Meses em português
     month_names = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -112,7 +143,8 @@ def notify_client(client, report_url, month, year, pdf_buffer, report_html=None)
             subject=subject,
             message_html="",  # Não usado quando report_html está presente
             pdf_buffer=pdf_buffer,
-            report_html=report_html
+            report_html=report_html,
+            chart_buffers=chart_buffers
         )
     else:
         # Criar corpo do e-mail padrão quando report_html não for fornecido
@@ -164,5 +196,6 @@ def notify_client(client, report_url, month, year, pdf_buffer, report_html=None)
             to=client['report_config']['email'],
             subject=subject,
             message_html=html_content,
-            pdf_buffer=pdf_buffer
+            pdf_buffer=pdf_buffer,
+            chart_buffers=chart_buffers
         )

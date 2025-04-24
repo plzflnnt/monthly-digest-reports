@@ -44,7 +44,7 @@ def generate_monthly_reports(event, context):
         
         # Carregar configuração dos clientes
         try:
-            with open('config/clients.json', 'r') as f:
+            with open('config/clients.json', 'r', encoding='utf-8') as f:
                 clients_config = json.load(f)
                 logger.info(f"Configuração de {len(clients_config.get('clients', []))} clientes carregada com sucesso")
         except Exception as e:
@@ -106,7 +106,7 @@ def generate_monthly_reports(event, context):
                     if client['report_config'].get('enable_debug', False):
                         debug_dir = f"debug_{client['id']}"
                         os.makedirs(debug_dir, exist_ok=True)
-                        with open(f"{debug_dir}/analytics_data.json", "w") as f:
+                        with open(f"{debug_dir}/analytics_data.json", "w", encoding='utf-8') as f:
                             json.dump(analytics_data, f, default=str, indent=2)
                         logger.info(f"Dados do Analytics salvos para debug em {debug_dir}/analytics_data.json")
                 
@@ -178,6 +178,9 @@ def generate_monthly_reports(event, context):
                     try:
                         html_content = report.generate_html()
                         logger.info(f"HTML do relatório gerado com sucesso")
+
+                        # Obter os buffers de imagens dos gráficos
+                        chart_buffers = report.get_chart_buffers()
                         
                         # Salvar uma cópia do HTML para debug
                         if client['report_config'].get('enable_debug', False):
@@ -251,7 +254,8 @@ def generate_monthly_reports(event, context):
                         month, 
                         year, 
                         pdf_buffer,
-                        report_html=optimized_html  # Usar o HTML otimizado no corpo do e-mail
+                        report_html=optimized_html,  # Usar o HTML otimizado no corpo do e-mail
+                        chart_buffers=chart_buffers  # Passar os buffers de imagens
                     )
                     
                     if success:
