@@ -42,27 +42,110 @@ except Exception as e:
     logger.error(traceback.format_exc())
     sys.exit("Falha ao importar WeasyPrint, verifique a instalação")
 
-def load_test_data():
-    """Carrega dados de teste dos arquivos JSON"""
-    logger.info("Carregando dados de teste...")
+# Adicione estas funções para substituir a função load_test_data()
+
+def load_api_data():
+    """Carrega dados diretamente das APIs do Google"""
+    logger.info("Carregando dados diretamente das APIs do Google...")
+    
+    # Obter o período do mês anterior
+    from datetime import datetime, timedelta
+    
+    # Calcular mês anterior
+    today = datetime.today()
+    first_day_of_month = today.replace(day=1)
+    last_day_of_previous_month = first_day_of_month - timedelta(days=1)
+    first_day_of_previous_month = last_day_of_previous_month.replace(day=1)
+    
+    start_date = first_day_of_previous_month.strftime('%Y-%m-%d')
+    end_date = last_day_of_previous_month.strftime('%Y-%m-%d')
+    
+    logger.info(f"Período de análise: {start_date} a {end_date}")
     
     try:
-        # Carregar dados do Analytics
-        with open('api_analysis/analytics_raw.json', 'r') as f:
-            analytics_data = json.load(f)
-            logger.info(f"Dados do Analytics carregados: {len(analytics_data['daily_metrics'])} registros diários")
-            
-        # Carregar dados do Search Console
-        with open('api_analysis/search_console_raw.json', 'r') as f:
-            search_console_data = json.load(f)
-            logger.info(f"Dados do Search Console carregados: {len(search_console_data['performance_by_date'])} registros diários")
-            
+        # Carregar configuração do cliente para testes
+        import json
+        with open('config/clients.json', 'r') as f:
+            clients_config = json.load(f)
+        
+        # Usar o primeiro cliente como exemplo
+        client = clients_config['clients'][0]
+        logger.info(f"Usando cliente para teste: {client['name']}")
+        
+        # Obter dados do Analytics
+        analytics_data = get_analytics_data(
+            client['analytics']['property_id'],
+            start_date,
+            end_date
+        )
+        logger.info(f"Dados do Analytics obtidos com sucesso")
+        
+        # Obter dados do Search Console
+        search_console_data = get_search_console_data(
+            client['search_console']['site_url'],
+            start_date,
+            end_date
+        )
+        logger.info(f"Dados do Search Console obtidos com sucesso")
+        
         return analytics_data, search_console_data
-    
+        
     except Exception as e:
-        logger.error(f"Erro ao carregar dados de teste: {str(e)}")
+        logger.error(f"Erro ao carregar dados das APIs: {str(e)}")
         logger.error(traceback.format_exc())
-        sys.exit("Falha ao carregar dados de teste")
+        sys.exit("Falha ao carregar dados das APIs")
+
+def get_analytics_data(property_id, start_date, end_date):
+    """Obtém dados do Google Analytics 4"""
+    logger.info(f"Obtendo dados do Analytics para property_id={property_id}...")
+    
+    try:
+        # Importar módulo de analytics do seu projeto
+        from modules import analytics as analytics_module
+        
+        # Obter dados via API
+        analytics_data = analytics_module.get_analytics_data(
+            property_id,
+            start_date,
+            end_date
+        )
+        
+        # Registrar informações básicas
+        if 'daily_metrics' in analytics_data:
+            logger.info(f"Recebidos {len(analytics_data['daily_metrics'])} registros diários do Analytics")
+        
+        return analytics_data
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter dados do Analytics: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
+
+def get_search_console_data(site_url, start_date, end_date):
+    """Obtém dados do Google Search Console"""
+    logger.info(f"Obtendo dados do Search Console para site_url={site_url}...")
+    
+    try:
+        # Importar módulo de search_console do seu projeto
+        from modules import search_console as search_console_module
+        
+        # Obter dados via API
+        search_console_data = search_console_module.get_search_console_data(
+            site_url,
+            start_date,
+            end_date
+        )
+        
+        # Registrar informações básicas
+        if 'performance_by_date' in search_console_data:
+            logger.info(f"Recebidos {len(search_console_data['performance_by_date'])} registros diários do Search Console")
+        
+        return search_console_data
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter dados do Search Console: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
 
 def inspect_date_formats(data_list, source_name, date_field='date'):
     """Inspeciona e registra os formatos de data nos dados"""
@@ -525,15 +608,24 @@ def test_kaleido_installation():
 def main():
     """Função principal de teste"""
     logger.info("=" * 80)
-    logger.info("INICIANDO TESTE DE GERAÇÃO DE GRÁFICOS")
+    logger.info("INICIANDO TESTE DE GERAÇÃO DE GRÁFICOS COM DADOS DA API")
     logger.info("=" * 80)
     
     # Testar Kaleido
     if not test_kaleido_installation():
         sys.exit("Falha na instalação do Kaleido, necessário para geração de imagens")
     
-    # Carregar dados
-    analytics_data, search_console_data = load_test_data()
+    # Carregar dados diretamente das APIs
+    analytics_data, search_console_data = load_api_data()
+    
+    # Salvar dados obtidos para referência
+    with open("api_data_analytics.json", "w") as f:
+        json.dump(analytics_data, f, indent=2)
+    logger.info("Dados do Analytics salvos em api_data_analytics.json")
+    
+    with open("api_data_search_console.json", "w") as f:
+        json.dump(search_console_data, f, indent=2)
+    logger.info("Dados do Search Console salvos em api_data_search_console.json")
     
     # Inspecionar formatos de data
     inspect_date_formats(analytics_data['daily_metrics'], "Analytics")
@@ -554,8 +646,59 @@ def main():
     else:
         logger.warning("Falha ao gerar gráfico de desempenho nas buscas")
     
-    # Gerar relatório
-    generate_test_report(trend_chart_url, search_chart_url)
+    # Gerar relatório de teste (corrigido o erro de formatação)
+    html_template = """
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Relatório de Teste de Gráficos</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            .chart-container { margin: 20px 0; border: 1px solid #ddd; padding: 10px; }
+            img { max-width: 100%; }
+        </style>
+    </head>
+    <body>
+        <h1>Relatório de Teste - Verificação de Gráficos</h1>
+        
+        <div class="chart-container">
+            <h2>Gráfico 1: Tendência de Visitas e Usuários</h2>
+            <img src="{trend_chart}" alt="Gráfico de tendência">
+        </div>
+        
+        <div class="chart-container">
+            <h2>Gráfico 2: Desempenho nas Buscas</h2>
+            <img src="{search_chart}" alt="Gráfico de desempenho nas buscas">
+        </div>
+        
+        <p>Gerado em: {date_time}</p>
+    </body>
+    </html>
+    """
+    
+    # Preencher o template
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    html_content = html_template.format(
+        trend_chart=trend_chart_url if trend_chart_url else "",
+        search_chart=search_chart_url if search_chart_url else "",
+        date_time=now
+    )
+    
+    # Salvar HTML
+    with open("test_report.html", "w", encoding="utf-8") as f:
+        f.write(html_content)
+    logger.info("Relatório HTML salvo como test_report.html")
+    
+    # Tentar converter para PDF
+    try:
+        HTML(string=html_content).write_pdf("test_report.pdf")
+        logger.info("Relatório PDF salvo como test_report.pdf")
+    except Exception as e:
+        logger.error(f"Erro ao gerar PDF: {str(e)}")
+        logger.error(traceback.format_exc())
     
     logger.info("=" * 80)
     logger.info("TESTE CONCLUÍDO")
