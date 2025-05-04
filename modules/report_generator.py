@@ -579,7 +579,8 @@ class ModernReportGenerator:
         }
         
         # Gerar gráficos com fallback automático
-        enable_debug = self.client.get('report_config', {}).get('enable_debug', False)
+        #enable_debug = self.client.get('report_config', {}).get('enable_debug', False)
+        enable_debug=False
 
         # Trend chart
         trend_buffer = create_trend_chart(
@@ -633,21 +634,46 @@ class ModernReportGenerator:
     
     def generate_pdf(self):
         """Gera o relatório em PDF."""
-        # Gerar HTML
+        # Em vez de usar o HTML gerado com CIDs, vamos gerar um HTML específico para PDF
+        # com imagens em base64
+
+        # Primeiro, vamos gerar o HTML padrão (sem modificações na função original)
         html = self.generate_html()
 
-        # Criar PDF a partir do HTML
+        # Agora, vamos substituir todas as referências CID por imagens base64
+        import base64
+        import re
+
+        # Função para substituir referências CID por imagens base64
+        def replace_cid_with_base64(match):
+            cid_name = match.group(1)  # Exemplo: 'chart_trend' de 'cid:chart_trend'
+            chart_name = cid_name.replace('chart_', '')  # Remove o prefixo 'chart_'
+
+            if chart_name in self.chart_buffers:
+                buffer = self.chart_buffers[chart_name]
+                if buffer:
+                    buffer.seek(0)  # Resetar o buffer para o início
+                    encoded = base64.b64encode(buffer.read()).decode('utf-8')
+                    return f'data:image/png;base64,{encoded}'
+
+            # Caso não encontre o buffer, mantém a referência original
+            return f'cid:{cid_name}'
+
+        # Substituir todas as referências CID no HTML
+        pdf_html = re.sub(r'cid:(\w+)', replace_cid_with_base64, html)
+
+        # Criar PDF a partir do HTML modificado
         pdf_buffer = io.BytesIO()
 
         try:
             # Método 1: Abordagem direta - pode funcionar com algumas versões
             from weasyprint import HTML
-            HTML(string=html).write_pdf(pdf_buffer)
+            HTML(string=pdf_html).write_pdf(pdf_buffer)
         except TypeError as e1:
             try:
                 # Método 2: Abordagem com configuração explícita
                 from weasyprint import HTML, CSS
-                html_doc = HTML(string=html)
+                html_doc = HTML(string=pdf_html)
                 css = CSS(string='@page { margin: 0; }')
                 html_doc.write_pdf(pdf_buffer, stylesheets=[css])
             except TypeError as e2:
@@ -658,7 +684,7 @@ class ModernReportGenerator:
 
                     temp_html = tempfile.NamedTemporaryFile(suffix='.html', delete=False)
                     try:
-                        temp_html.write(html.encode('utf-8'))
+                        temp_html.write(pdf_html.encode('utf-8'))
                         temp_html.close()
 
                         from weasyprint import HTML
@@ -667,12 +693,12 @@ class ModernReportGenerator:
                         # Remover arquivo temporário
                         os.unlink(temp_html.name)
                 except Exception as e3:
+                    import logging
                     logging.error(f"Todos os métodos falharam. Erro final: {e3}")
                     raise RuntimeError(f"Não foi possível gerar o PDF: {e1}, {e2}, {e3}")
 
         pdf_buffer.seek(0)
         return pdf_buffer
-    
     
     @staticmethod
     def upload_report(pdf_buffer, client_id, year, month, bucket_name='monthly-digest-reports'):
