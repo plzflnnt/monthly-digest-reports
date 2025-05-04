@@ -150,26 +150,36 @@ class ModernReportGenerator:
 
         # Analisar visitas e usuários
         if 'basic_metrics' in analytics_data:
-            sessions = int(analytics_data['basic_metrics']['sessions'])
-            users = int(analytics_data['basic_metrics']['total_users'])
+            basic_metrics = analytics_data.get('basic_metrics', {})
 
-            if has_prev_data and 'analytics' in self.prev_month_data:
-                prev_sessions = int(self.prev_month_data['analytics']['basic_metrics']['sessions'])
-                prev_users = int(self.prev_month_data['analytics']['basic_metrics']['total_users'])
+            # Verificar se as chaves existem antes de acessá-las
+            if 'sessions' in basic_metrics and 'total_users' in basic_metrics:
+                sessions = int(basic_metrics['sessions'])
+                users = int(basic_metrics['total_users'])
 
-                sessions_growth = calculate_growth(sessions, prev_sessions)
-                users_growth = calculate_growth(users, prev_users)
+                if has_prev_data and 'analytics' in self.prev_month_data:
+                    prev_sessions = int(self.prev_month_data['analytics']['basic_metrics']['sessions'])
+                    prev_users = int(self.prev_month_data['analytics']['basic_metrics']['total_users'])
 
-                if sessions_growth > 10:
-                    summary_parts.append(f"Seu site teve um crescimento expressivo de {sessions_growth:.1f}% nas visitas em relação ao mês anterior.")
-                elif sessions_growth > 0:
-                    summary_parts.append(f"As visitas ao seu site aumentaram {sessions_growth:.1f}% em comparação com o mês passado.")
-                elif sessions_growth < -10:
-                    summary_parts.append(f"Houve uma redução significativa de {abs(sessions_growth):.1f}% nas visitas em relação ao mês anterior.")
+                    sessions_growth = calculate_growth(sessions, prev_sessions)
+                    users_growth = calculate_growth(users, prev_users)
+
+                    if sessions_growth > 10:
+                        summary_parts.append(f"Seu site teve um crescimento expressivo de {sessions_growth:.1f}% nas visitas em relação ao mês anterior.")
+                    elif sessions_growth > 0:
+                        summary_parts.append(f"As visitas ao seu site aumentaram {sessions_growth:.1f}% em comparação com o mês passado.")
+                    elif sessions_growth < -10:
+                        summary_parts.append(f"Houve uma redução significativa de {abs(sessions_growth):.1f}% nas visitas em relação ao mês anterior.")
+                    else:
+                        summary_parts.append("O número de visitas se manteve estável em relação ao mês anterior.")
                 else:
-                    summary_parts.append("O número de visitas se manteve estável em relação ao mês anterior.")
+                    summary_parts.append(f"Seu site recebeu {sessions} visitas e {users} usuários únicos neste mês.")
+
             else:
-                summary_parts.append(f"Seu site recebeu {sessions} visitas e {users} usuários únicos neste mês.")
+                # Valor padrão caso as chaves não existam
+                sessions = 0
+                users = 0
+                summary_parts.append(f"Seu site recebeu aproximadamente {sessions} visitas e {users} usuários únicos neste mês.") 
 
         # Analisar desempenho no Google
         if 'total_impressions' in search_console_data:
