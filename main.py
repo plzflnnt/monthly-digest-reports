@@ -19,8 +19,8 @@ from check_dependencies import check_dependencies
 
 # Configurar logging detalhado
 logging.basicConfig(
-    level=logging.WARNING,
-#    level=logging.INFO,
+#    level=logging.WARNING,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler("monthly_digest.log"),

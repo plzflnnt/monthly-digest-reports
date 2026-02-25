@@ -7,3 +7,13 @@ report_template.json
 debug_estrelinhas-no-ceu
 debug_estudio-eb
 debug_handelprime
+.venv
+__pycache__
+.google-cloud-creds
+debug_handelprime
+debug_bye-pet
+config
+google-service-account.json
+test_charts.py
+test_charts_generation.py
+test_in.py

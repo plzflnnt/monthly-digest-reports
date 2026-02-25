@@ -388,7 +388,9 @@ class ModernReportGenerator:
         
         # Processar dados do Search Console
         impressions = format_number(int(search_console_data.get('total_impressions', 0)))
+        impressions_total = format_number(int(search_console_data.get('total_impressions', 0)))
         clicks = format_number(int(search_console_data.get('total_clicks', 0)))
+        clicks_total = format_number(int(search_console_data.get('total_clicks', 0)))
         ctr = format_number(float(search_console_data.get('avg_ctr', 0)) * 100, 1)
         avg_position = format_number(float(search_console_data.get('avg_position', 0)), 1)
         
@@ -545,7 +547,9 @@ class ModernReportGenerator:
             'sessions': sessions,
             'users': users,
             'impressions': impressions,
+            'impressions_total': impressions_total,
             'clicks': clicks,
+            'clicks_total': clicks_total,
             'sessions_change': format_number(sessions_change, 1),
             'users_change': format_number(users_change, 1),
             'impressions_change': format_number(impressions_change, 1),
@@ -579,8 +583,8 @@ class ModernReportGenerator:
         }
         
         # Gerar gráficos com fallback automático
-        #enable_debug = self.client.get('report_config', {}).get('enable_debug', False)
-        enable_debug=False
+        enable_debug = self.client.get('report_config', {}).get('enable_debug', False)
+        #enable_debug=False
 
         # Trend chart
         trend_buffer = create_trend_chart(
